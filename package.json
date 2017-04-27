@@ -1,0 +1,30 @@
+{
+  "scripts": {
+    "test": "mocha --compilers js:babel-register"
+  },
+  "devDependencies": {
+    "babel-preset-env": "^1.4.0",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-register": "^6.24.1",
+    "mocha": "^3.3.0"
+  },
+  "babel": {
+    "presets": [
+      [
+        "env",
+        {
+          "targets": {
+            "node": 7
+          }
+        }
+      ],
+      "react",
+      "stage-0"
+    ]
+  },
+  "dependencies": {
+    "ramda": "^0.23.0",
+    "treis": "^2.5.0"
+  }
+}
