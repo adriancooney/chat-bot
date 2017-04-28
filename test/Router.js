@@ -26,16 +26,16 @@ describe("Router", () => {
         );
 
         let inputs = [
-            [["@bot more", { private: true, author: 2 }], "boo"],
-            [["@desk more", { private: true, author: 2 }], "bar"],
-            [["@desk more", { private: false, author: 2 }], "default"],
-            [["@bot foo", { private: true, author: 2 }], "other-default"],
-            [["foo", { private: false, author: 2 }], "default"],
-            [["1", { private: true, author: 2 }], "vote"],
+            [{ content: "@bot more", private: true, author: 2 }, "boo"],
+            [{ content: "@desk more", private: true, author: 2 }, "bar"],
+            [{ content: "@desk more", private: false, author: 2 }, "default"],
+            [{ content: "@bot foo", private: true, author: 2 }, "other-default"],
+            [{ content: "foo", private: false, author: 2 }, "default"],
+            [{ content: "1", private: true, author: 2 }, "vote"],
         ];
 
-        inputs.forEach(([args, output]) => {
-            assert.equal(example(...args), output);
+        inputs.forEach(([message, output]) => {
+            assert.equal(example(message), output);
         });
     });
 });
