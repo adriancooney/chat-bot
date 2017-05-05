@@ -9,7 +9,6 @@ export default class Bot {
     }
 
     handleMessage(message) {
-        console.log(`message received { from ${message.author} } ${message.content}`);
         if(this.router) {
             const action = this.router(message);
 
@@ -49,7 +48,6 @@ export default class Bot {
     }
 
     sendMessage({ to, content })  {
-        console.log(`sending message: { to ${to} } ${content}`);
         return Promise.resolve();
     }
 }
@@ -61,6 +59,12 @@ export function TestBot(bot, ...args) {
 
             this.queue = [];
             this.awaiting = [];
+        }
+
+        render(...args) {
+            const rendered = super.render(...args);
+            rendered.debug = true;
+            return rendered;
         }
 
         awaitMessage() {
@@ -78,7 +82,14 @@ export function TestBot(bot, ...args) {
             assert.deepEqual(message, expected);
         }
 
+        handleMessage(message) {
+            console.log(`message received { from ${message.author} } ${message.content}`);
+            return super.handleMessage(message);
+        }
+
         sendMessage(message) {
+            console.log(`sending message: { to ${message.to} } ${message.content}`);
+
             if(this.awaiting.length) {
                 this.awaiting.shift().resolve(message);
             } else {

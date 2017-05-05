@@ -108,7 +108,7 @@ export function Rule(predicate, options, ...children) {
         children = flatten(children);
     }
 
-    const rule = Object.assign((message, level = 0) => {
+    const rule = Object.assign((message, debug, level = 0) => {
         let transform = inst(message);
         let match = !!transform;
 
@@ -125,9 +125,11 @@ export function Rule(predicate, options, ...children) {
             message = Object.assign({}, message, transform);
         }
 
-        const indent = "  ".repeat(level);
-        if(level === 0) console.log(indent + "message: ", message);
-        console.log(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
+        if(debug || rule.debug) {
+            const indent = "  ".repeat(level);
+            if(level === 0) console.log(indent + "message: ", message);
+            console.log(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
+        }
 
         if(match && options && action) {
             if(options.transform) {
@@ -140,7 +142,7 @@ export function Rule(predicate, options, ...children) {
         } else if(match && children.length) {
             for(var i = 0, len = children.length; i < len; i++) {
                 const child = children[i];
-                const childMatch = child(message, level + 1);
+                const childMatch = child(message, rule.debug, level + 1);
 
                 if(childMatch) {
                     return childMatch;
@@ -155,25 +157,25 @@ export function Rule(predicate, options, ...children) {
         options, children
     });
 
-    // All for console.log'ing routes.
+    // All for console.log'ing rules.
     rule.inspect = rule.toString = debug.bind(null, rule, 0);
 
     return rule;
 }
 
-function debug(route, indent = 0) {
+function debug(rule, indent = 0) {
     const ws = indent > 0 ? "  ".repeat(indent) : "";
-    let output = inspect(route.inst);
+    let output = inspect(rule.inst);
 
-    if(route.options && route.options.action) {
-        const action = route.options.action;
+    if(rule.options && rule.options.action) {
+        const action = rule.options.action;
         output = "if " + output + " do " + inspect(action);
     }
 
     output = ws + output;
 
-    if(route.children) {
-        output += "\n" + route.children.map(child => debug(child, indent + 1)).join("");
+    if(rule.children) {
+        output += "\n" + rule.children.map(child => debug(child, indent + 1)).join("");
     }
 
     return output;
