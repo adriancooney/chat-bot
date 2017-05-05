@@ -1,5 +1,5 @@
 import { inspect } from "util";
-import { omit } from "lodash";
+import { omit, flatten } from "lodash";
 import tt from "treis";
 
 export function Private() {
@@ -42,7 +42,7 @@ export function From({ users, user, rooms, room }, children) {
 }
 
 export function Command({ name }) {
-    return Object.assign(Match({ expr: new RegExp(`\\s*${name}\\s+`) }), {
+    return Object.assign(Match({ expr: new RegExp(`\\s*${name}(?:\\s+|$)`) }), {
         inspect() {
             return `command ${name}`;
         }
@@ -103,6 +103,11 @@ export function Rule(predicate, options, ...children) {
         action = () => (options.action);
     }
 
+    if(children.length) {
+        // Flatten children to allow passing in of arrays
+        children = flatten(children);
+    }
+
     const rule = Object.assign((message, level = 0) => {
         let transform = inst(message);
         let match = !!transform;
@@ -122,10 +127,16 @@ export function Rule(predicate, options, ...children) {
 
         const indent = "  ".repeat(level);
         if(level === 0) console.log(indent + "message: ", message);
-        console.log(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`);
+        console.log(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
 
-        if(match && options && options.action) {
-            return action;
+        if(match && options && action) {
+            if(options.transform) {
+                return (...args) => action(options.transform(message), ...args);
+            }
+
+            // We bind the message object to the action handler so any transforms
+            // applied by the rules are persisted.
+            return action.bind(null, message);
         } else if(match && children.length) {
             for(var i = 0, len = children.length; i < len; i++) {
                 const child = children[i];

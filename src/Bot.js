@@ -1,4 +1,5 @@
 import Promise from "bluebird";
+import assert from "assert";
 
 export default class Bot {
     constructor(initialState) {
@@ -10,13 +11,13 @@ export default class Bot {
     handleMessage(message) {
         console.log(`message received { from ${message.author} } ${message.content}`);
         if(this.router) {
-            const action = this.router(message, this.state);
+            const action = this.router(message);
 
             if(action) {
-                if(action.length === 3) {
-                    return action(message, this.state, this.dispatch.bind(this));
-                } else {
+                if(action.length === 2) {
                     return this.dispatch(action(message));
+                } else {
+                    return action(this.state, this.dispatch.bind(this));
                 }
             }
         }
@@ -43,8 +44,48 @@ export default class Bot {
         });
     }
 
+    transition() {
+
+    }
+
     sendMessage({ to, content })  {
         console.log(`sending message: { to ${to} } ${content}`);
         return Promise.resolve();
     }
+}
+
+export function TestBot(bot, ...args) {
+    return new (class TestBot extends bot {
+        constructor(...args) {
+            super(...args)
+
+            this.queue = [];
+            this.awaiting = [];
+        }
+
+        awaitMessage() {
+            if(this.queue.length) {
+                return Promise.resolve(this.queue.shift());
+            }
+
+            return new Promise((resolve, reject) => {
+                this.queue.push({ resolve, reject });
+            });
+        }
+
+        async expectMessage(expected) {
+            const message = await this.awaitMessage();
+            assert.deepEqual(message, expected);
+        }
+
+        sendMessage(message) {
+            if(this.awaiting.length) {
+                this.awaiting.shift().resolve(message);
+            } else {
+                this.queue.push(message);
+            }
+
+            return Promise.resolve();
+        }
+    })(...args);
 }
