@@ -1,6 +1,5 @@
 import { inspect } from "util";
 import { omit, flatten } from "lodash";
-import tt from "treis";
 
 export function Private() {
     return Object.assign(({ content, ...attrs }) => attrs.private, {

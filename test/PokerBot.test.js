@@ -1,4 +1,4 @@
-import { TestBot } from "../src/Bot";
+import TestBot from "../src/lib/TestBot";
 import PokerBot from "../src/PokerBot.js";
 
 const room = 1;
@@ -12,7 +12,7 @@ const initialState = {
 describe("PokerBot", () => {
     let bot;
     beforeEach(() => {
-        bot = new TestBot(PokerBot, initialState);
+        bot = TestBot(PokerBot, initialState);
     });
 
     describe("state: waiting", () => {

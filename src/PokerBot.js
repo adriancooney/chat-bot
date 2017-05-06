@@ -1,15 +1,19 @@
 /** @jsx Rule */
-import Bot from "./Bot";
 import {
+    Bot,
     Rule,
     Mention,
     Command,
     From
-} from "./Router";
+} from "./lib/react";
 
 export default class PokerBot extends Bot {
-    constructor({ room, moderator, participants }) {
-        super({
+    constructor(props) {
+        super(props);
+
+        const { room, moderator, participants } = props;
+
+        this.state = {
             room,
             moderator,
             participants,
@@ -20,11 +24,12 @@ export default class PokerBot extends Bot {
                 completed: [],
                 skipped: []
             }
-        });
+        };
     }
 
-    render(state) {
-        return this.renderModerator(state);
+    render() {
+        console.log(this);
+        return this.renderModerator(this.state);
     }
 
     renderModerator(state) {
@@ -42,14 +47,11 @@ export default class PokerBot extends Bot {
             break;
         }
 
-        inputs.push(
-            <Command name="add" handler={this.addUser} />,
-            <Command name="remove" handler={this.removeUser} />
-        );
-
         return (
             <From user={state.moderator}>
-                {inputs}
+                { inputs}
+                <Command name="add" handler={this.addUser} />
+                <Command name="remove" handler={this.removeUser} />
             </From>
         );
     }
@@ -57,12 +59,13 @@ export default class PokerBot extends Bot {
     reduce(state, action) {
         switch(action.type) {
             case "PLAN":
-                const { action } = state;
+                const { tasklist } = action.payload;
 
-                return Object.assign({}, state, {
+                return  {
+                    ...state,
                     state: "ready",
                     tasklist
-                });
+                };
             break;
 
             default:
