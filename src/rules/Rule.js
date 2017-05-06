@@ -65,6 +65,8 @@ export default class Rule {
                     return childMatch;
                 }
             }
+        } else if(match && this.router) {
+            return this.router.test(message, debug, level + 1);
         } else {
             return null;
         }
@@ -75,13 +77,15 @@ export default class Rule {
         let output = this.toString();
 
         if(this.props.action) {
-            output = "if " + output + " do " + inspect(this.props.action);
+            output = "if " + output + " do " + inspect(this.props.action) + "\n";
         }
 
         output = ws + output;
 
-        if(this.props.children) {
+        if(this.props.children.length) {
             output += "\n" + this.props.children.map(child => child.inspect(level + 1)).join("");
+        } else if(this.router) {
+            output += "\n" + this.router.inspect(level + 1);
         }
 
         return output;

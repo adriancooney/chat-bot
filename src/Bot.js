@@ -1,12 +1,16 @@
 import { inspect } from "util";
 import Promise from "bluebird";
 import { flatten, omit } from "lodash";
+import Rule from "./rules/Rule";
 
-export default class Bot {
+export default class Bot extends Rule {
     constructor(props) {
+        super(props);
         this.props = props;
         this.queue = [];
         this.debug = true;
+
+        this.setState(this.state);
     }
 
     /**
@@ -17,10 +21,6 @@ export default class Bot {
      * @return {Promise}        Resolves when the action completes.
      */
     handleMessage(message) {
-        if(!this.router) {
-            this.setState(this.state);
-        }
-
         const action = this.router.test(message, this.debug);
 
         if(action) {
@@ -67,7 +67,7 @@ export default class Bot {
      *
      * @param {Object} state The next state.
      */
-    setState(state) {
+    setState(state = {}) {
         this.state = state;
         this.router = this.render();
     }
@@ -77,6 +77,14 @@ export default class Bot {
      */
     transition(action, currentState, nextState, mutation) {
         return;
+    }
+
+    match() {
+        return true;
+    }
+
+    toString() {
+        return this.constructor.name;
     }
 
     sendMessage({ to, content })  {
@@ -97,7 +105,7 @@ export default class Bot {
     static rule(rule, props, ...children) {
         let action = props.action || props.handler;
 
-        if(!children.length && !action) {
+        if(!(rule.prototype instanceof Bot) && !children.length && !action) {
             throw new Error("Leaf matchers must have an action.");
         }
 

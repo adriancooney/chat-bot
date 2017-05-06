@@ -1,14 +1,15 @@
 import assert from "assert";
 import Promise from "bluebird";
 
-export default function TestBot(bot, ...args) {
+export default function TestBot(bot, props, initialState) {
     return new (class TestBot extends bot {
-        constructor(...args) {
-            super(...args)
+        constructor(props) {
+            super(props)
 
             this.messages = [];
             this.awaiting = [];
             this.debug = true;
+            this.state = initialState;
         }
 
         awaitMessage() {
@@ -41,5 +42,5 @@ export default function TestBot(bot, ...args) {
 
             return Promise.resolve();
         }
-    })(...args);
+    })(props);
 }
