@@ -8,12 +8,7 @@ export default function TestBot(bot, ...args) {
 
             this.messages = [];
             this.awaiting = [];
-        }
-
-        render(...args) {
-            const rendered = super.render(...args);
-            rendered.debug = true;
-            return rendered;
+            this.debug = true;
         }
 
         awaitMessage() {

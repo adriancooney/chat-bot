@@ -1,9 +1,11 @@
 import Promise from "bluebird";
+import { flatten } from "lodash";
 
 export default class Bot {
     constructor(props) {
         this.props = props;
         this.queue = [];
+        this.debug = false;
     }
 
     /**
@@ -17,7 +19,7 @@ export default class Bot {
             this.setState(this.state);
         }
 
-        const action = this.router(message);
+        const action = this.router(message, this.debug);
 
         if(action) {
             if(action.length === 2) {
@@ -58,12 +60,22 @@ export default class Bot {
         });
     }
 
+    /**
+     * Set the state of the bot. This triggers a re-render.
+     *
+     * @param {Object} state The next state.
+     */
     setState(state) {
         this.state = state;
         this.router = this.render();
     }
 
-    transition() {}
+    /**
+     * A no-op transition.
+     */
+    transition(action, currentState, nextState, mutation) {
+        return;
+    }
 
     sendMessage({ to, content })  {
         return Promise.resolve();
@@ -71,5 +83,116 @@ export default class Bot {
 
     toJSON() {
         return this.state;
+    }
+
+    /**
+     * Create a new matcher from a rule.
+     * @param  {Constructor}    rule     A rule constructor.
+     * @param  {Object}         props    The rule's props.
+     * @param  {...Function}    children Nested matchers returned from `Bot.rule`.
+     * @return {Function} Returns a matcher.
+     */
+    static rule(rule, props, ...children) {
+        const inst = new rule(props, children);
+        let action = props.action || props.handler;
+
+        if(!children.length && !action) {
+            throw new Error("Leaf matchers must have an action.");
+        }
+
+        if(typeof action === "string") {
+            action = message => ({ type: props.action, payload: message });
+        }
+
+        if(typeof action === "object") {
+            action = () => (props.action);
+        }
+
+        if(children.length) {
+            if(action) {
+                throw new Error("Rule cannot have an action and children.");
+            }
+
+            // Flatten children to allow passing in arrays of arrays
+            children = flatten(children);
+        }
+
+        const matcher = Object.assign((message, debug, level = 0) => {
+            let transform = inst.match(message);
+            let match = transform !== false;
+
+            if(typeof transform === "string") {
+                transform = { content: transform };
+            }
+
+            if(typeof transform !== "object") {
+                transform = null;
+            }
+
+            if(transform) {
+                // Apply the transform to the message for all children
+                message = Object.assign({}, message, transform);
+            }
+
+            if(debug) {
+                const indent = "  ".repeat(level);
+
+                if(level === 0) {
+                    console.log(indent + "message: ", message);
+                }
+
+                console.log(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
+            }
+
+            if(match && props && action) {
+                if(props.transform) {
+                    return (...args) => action(props.transform(message), ...args);
+                }
+
+                // We bind the message object to the action handler so any transforms
+                // applied by the rules are persisted.
+                return action.bind(null, message);
+            } else if(match && children.length) {
+                for(var i = 0, len = children.length; i < len; i++) {
+                    const child = children[i];
+                    const childMatch = child(message, matcher.debug, level + 1);
+
+                    if(childMatch) {
+                        return childMatch;
+                    }
+                }
+            } else {
+                return null;
+            }
+        }, { props, children, inst, rule });
+
+        matcher.inspect = matcher.toString = Bot.inspectRule.bind(null, matcher, 0);
+
+        return matcher;
+    }
+
+
+    /**
+     * Inspect an instantiated rule (i.e. matcher).
+     * @param  {Function} matcher Matcher returned from `Bot.rule`.
+     * @param  {Number}   level   How deep the rule is nested (internal).
+     * @return {String}           The string to display.
+     */
+    static inspectRule(matcher, level = 0) {
+        const ws = level > 0 ? "  ".repeat(level) : "";
+        let output = inspect(matcher.inst);
+
+        if(matcher.props && matcher.props.action) {
+            const action = matcher.props.action;
+            output = "if " + output + " do " + inspect(action);
+        }
+
+        output = ws + output;
+
+        if(matcher.children) {
+            output += "\n" + matcher.children.map(child => debug(child, level + 1)).join("");
+        }
+
+        return output;
     }
 }

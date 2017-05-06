@@ -1,7 +1,6 @@
-/** @jsx createRule */
+/** @jsx Bot.rule */
 import {
     Bot,
-    createRule,
     Mention,
     Command,
     From
