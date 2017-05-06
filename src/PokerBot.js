@@ -1,11 +1,11 @@
-/** @jsx Rule */
+/** @jsx createRule */
 import {
     Bot,
-    Rule,
+    createRule,
     Mention,
     Command,
     From
-} from "./lib/react";
+} from "./lib";
 
 export default class PokerBot extends Bot {
     constructor(props) {
@@ -28,7 +28,6 @@ export default class PokerBot extends Bot {
     }
 
     render() {
-        console.log(this);
         return this.renderModerator(this.state);
     }
 

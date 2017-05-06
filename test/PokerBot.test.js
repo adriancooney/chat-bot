@@ -4,7 +4,7 @@ import PokerBot from "../src/PokerBot.js";
 const room = 1;
 const moderator = 10;
 const participants = [1, 2, 3];
-const initialState = {
+const props = {
     room, moderator,
     participants: [1, 2, 3]
 };
@@ -12,7 +12,7 @@ const initialState = {
 describe("PokerBot", () => {
     let bot;
     beforeEach(() => {
-        bot = TestBot(PokerBot, initialState);
+        bot = TestBot(PokerBot, props);
     });
 
     describe("state: waiting", () => {

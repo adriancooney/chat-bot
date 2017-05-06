@@ -4,19 +4,26 @@ export default class Bot {
     constructor(props) {
         this.props = props;
         this.queue = [];
-        this.setState(this.state || {});
     }
 
+    /**
+     * Handle an incoming message and pass it through the decision tree. If an
+     * action is returned, execute the action (or dispatch).
+     * @param  {Object} message Message object. See message object spec.
+     * @return {Promise}        Resolves when the action completes.
+     */
     handleMessage(message) {
-        if(this.router) {
-            const action = this.router(message);
+        if(!this.router) {
+            this.setState(this.state);
+        }
 
-            if(action) {
-                if(action.length === 2) {
-                    return this.dispatch(action(message));
-                } else {
-                    return action(this.state, this.dispatch.bind(this));
-                }
+        const action = this.router(message);
+
+        if(action) {
+            if(action.length === 2) {
+                return this.dispatch(action(message));
+            } else {
+                return Promise.resolve(action(this.state, this.dispatch.bind(this)));
             }
         }
     }
