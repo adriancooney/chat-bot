@@ -1,3 +1,4 @@
+import { inspect } from "util";
 import Promise from "bluebird";
 import { flatten } from "lodash";
 
@@ -170,7 +171,8 @@ export default class Bot {
             }
         }, { props, children, inst, rule });
 
-        matcher.inspect = matcher.toString = Bot.inspectRule.bind(null, matcher, 0);
+        matcher.inspect = Bot.inspectRule.bind(null, matcher, 0);
+        matcher.toString = inst.inspect.bind(inst);
 
         return matcher;
     }
@@ -194,7 +196,7 @@ export default class Bot {
         output = ws + output;
 
         if(matcher.children) {
-            output += "\n" + matcher.children.map(child => debug(child, level + 1)).join("");
+            output += "\n" + matcher.children.map(child => Bot.inspectRule(child, level + 1)).join("");
         }
 
         return output;
