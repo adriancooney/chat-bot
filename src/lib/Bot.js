@@ -11,6 +11,7 @@ export default class Bot {
     /**
      * Handle an incoming message and pass it through the decision tree. If an
      * action is returned, execute the action (or dispatch).
+     *
      * @param  {Object} message Message object. See message object spec.
      * @return {Promise}        Resolves when the action completes.
      */
@@ -85,6 +86,9 @@ export default class Bot {
         return this.state;
     }
 
+    /** {Function} The debug logger. */
+    static logger = (...args) => console.log(...args);
+
     /**
      * Create a new matcher from a rule.
      * @param  {Constructor}    rule     A rule constructor.
@@ -138,10 +142,10 @@ export default class Bot {
                 const indent = "  ".repeat(level);
 
                 if(level === 0) {
-                    console.log(indent + "message: ", message);
+                    Bot.logger(indent + "message: ", message);
                 }
 
-                console.log(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
+                Bot.logger(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
             }
 
             if(match && props && action) {
@@ -155,7 +159,7 @@ export default class Bot {
             } else if(match && children.length) {
                 for(var i = 0, len = children.length; i < len; i++) {
                     const child = children[i];
-                    const childMatch = child(message, matcher.debug, level + 1);
+                    const childMatch = child(message, debug, level + 1);
 
                     if(childMatch) {
                         return childMatch;
