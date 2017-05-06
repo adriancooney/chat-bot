@@ -1,21 +1,18 @@
 {
+  "name": "chat-bot",
+  "main": "src/index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel-register",
-    "test:browser": "webpack --config test/browser/webpack.config.test.js"
+    "test": "mocha --compilers js:babel-register"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
-    "babel-core": "^6.24.1",
-    "babel-loader": "^7.0.0",
     "babel-preset-env": "^1.4.0",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "babel-register": "^6.24.1",
-    "mocha": "^3.3.0",
-    "react": "^15.5.4",
-    "react-dom": "^15.5.4",
-    "webpack": "^2.5.0"
+    "mocha": "^3.3.0"
   },
+  "license": "MIT",
   "babel": {
     "presets": [
       [
@@ -31,9 +28,6 @@
     ]
   },
   "dependencies": {
-    "bluebird": "^3.5.0",
-    "ramda": "^0.23.0",
-    "redux": "^3.6.0",
-    "treis": "^2.5.0"
+    "bluebird": "^3.5.0"
   }
 }

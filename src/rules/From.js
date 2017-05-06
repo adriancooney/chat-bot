@@ -2,6 +2,8 @@ import Rule from "./Rule";
 
 export default class From extends Rule {
     match({ content, ...attrs }) {
+        console.log(attrs);
+
         const flags = [];
         const { users, user, rooms, room } = this.props;
 

@@ -6,7 +6,7 @@ export default class Bot {
     constructor(props) {
         this.props = props;
         this.queue = [];
-        this.debug = false;
+        this.debug = true;
     }
 
     /**
