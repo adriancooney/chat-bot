@@ -1,6 +1,6 @@
 import { inspect } from "util";
 import Promise from "bluebird";
-import { flatten } from "lodash";
+import { flatten, omit } from "lodash";
 
 export default class Bot {
     constructor(props) {
@@ -21,7 +21,7 @@ export default class Bot {
             this.setState(this.state);
         }
 
-        const action = this.router(message, this.debug);
+        const action = this.router.test(message, this.debug);
 
         if(action) {
             if(action.length === 2) {
@@ -87,9 +87,6 @@ export default class Bot {
         return this.state;
     }
 
-    /** {Function} The debug logger. */
-    static logger = (...args) => console.log(...args);
-
     /**
      * Create a new matcher from a rule.
      * @param  {Constructor}    rule     A rule constructor.
@@ -98,7 +95,6 @@ export default class Bot {
      * @return {Function} Returns a matcher.
      */
     static rule(rule, props, ...children) {
-        const inst = new rule(props, children);
         let action = props.action || props.handler;
 
         if(!children.length && !action) {
@@ -122,83 +118,10 @@ export default class Bot {
             children = flatten(children);
         }
 
-        const matcher = Object.assign((message, debug, level = 0) => {
-            let transform = inst.match(message);
-            let match = transform !== false;
-
-            if(typeof transform === "string") {
-                transform = { content: transform };
-            }
-
-            if(typeof transform !== "object") {
-                transform = null;
-            }
-
-            if(transform) {
-                // Apply the transform to the message for all children
-                message = Object.assign({}, message, transform);
-            }
-
-            if(debug) {
-                const indent = "  ".repeat(level);
-
-                if(level === 0) {
-                    Bot.logger(indent + "message: ", message);
-                }
-
-                Bot.logger(indent + `rule: ${inst.inspect()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
-            }
-
-            if(match && props && action) {
-                if(props.transform) {
-                    return (...args) => action(props.transform(message), ...args);
-                }
-
-                // We bind the message object to the action handler so any transforms
-                // applied by the rules are persisted.
-                return action.bind(null, message);
-            } else if(match && children.length) {
-                for(var i = 0, len = children.length; i < len; i++) {
-                    const child = children[i];
-                    const childMatch = child(message, debug, level + 1);
-
-                    if(childMatch) {
-                        return childMatch;
-                    }
-                }
-            } else {
-                return null;
-            }
-        }, { props, children, inst, rule });
-
-        matcher.inspect = Bot.inspectRule.bind(null, matcher, 0);
-        matcher.toString = inst.inspect.bind(inst);
-
-        return matcher;
-    }
-
-
-    /**
-     * Inspect an instantiated rule (i.e. matcher).
-     * @param  {Function} matcher Matcher returned from `Bot.rule`.
-     * @param  {Number}   level   How deep the rule is nested (internal).
-     * @return {String}           The string to display.
-     */
-    static inspectRule(matcher, level = 0) {
-        const ws = level > 0 ? "  ".repeat(level) : "";
-        let output = inspect(matcher.inst);
-
-        if(matcher.props && matcher.props.action) {
-            const action = matcher.props.action;
-            output = "if " + output + " do " + inspect(action);
-        }
-
-        output = ws + output;
-
-        if(matcher.children) {
-            output += "\n" + matcher.children.map(child => Bot.inspectRule(child, level + 1)).join("");
-        }
-
-        return output;
+        return new rule({
+            ...omit(props, "action", "handler"),
+            action,
+            children
+        });
     }
 }

@@ -5,7 +5,7 @@ export default class Private extends Rule {
         return input.private;
     }
 
-    inspect() {
+    toString() {
         return "is private";
     }
 }

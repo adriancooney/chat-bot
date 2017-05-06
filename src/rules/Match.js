@@ -13,7 +13,7 @@ export default class Match extends Rule {
         }
     }
 
-    inspect() {
+    toString() {
         return `match ${this.props.exactly ? "exactly " : ""}${inspect(this.props.exactly || this.props.expr)}`;
     }
 }

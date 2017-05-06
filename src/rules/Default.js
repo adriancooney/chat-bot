@@ -5,7 +5,7 @@ export default class Default extends Rule {
         return true;
     }
 
-    inspect() {
+    toString() {
         return "default to"
     }
 }

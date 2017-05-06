@@ -1,15 +1,20 @@
 import Match from "./Match";
 
 export default class Mention extends Match {
-    constructor({ handle, anywhere, symbol }) {
+    constructor(props) {
+        const { handle, anywhere, symbol } = props;
+
         if(!symbol) {
             symbol = "@";
         }
 
-        super({ handle, anywhere, symbol, expr: new RegExp(`^\\s*${symbol}${handle}\\s+`) });
+        super({
+            ...props,
+            expr: new RegExp(`^\\s*${symbol}${handle}\\s+`)
+        });
     }
 
-    inspect() {
+    toString() {
         return `mention @${this.props.handle}`;
     }
 }
