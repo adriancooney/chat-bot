@@ -9,7 +9,10 @@ export default function TestBot(bot, props, initialState) {
             this.messages = [];
             this.awaiting = [];
             this.debug = true;
-            this.state = initialState;
+
+            if(initialState) {
+                this.state = initialState;
+            }
         }
 
         awaitMessage() {

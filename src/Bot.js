@@ -9,8 +9,6 @@ export default class Bot extends Rule {
         this.props = props;
         this.queue = [];
         this.debug = true;
-
-        this.setState(this.state);
     }
 
     /**
@@ -21,14 +19,22 @@ export default class Bot extends Rule {
      * @return {Promise}        Resolves when the action completes.
      */
     handleMessage(message) {
-        const action = this.router.test(message, this.debug);
+        if(!this.router) {
+            this.setState(this.state);
+        }
 
-        if(action) {
-            if(action.length === 2) {
-                return this.dispatch(action(message));
-            } else {
-                return Promise.resolve(action(this.state, this.dispatch.bind(this)));
-            }
+        const actions = this.router.test(message, this.debug);
+
+        if(actions) {
+            return Promise.mapSeries(actions, action => {
+                if(action.length === 2) {
+                    return this.dispatch(action(message));
+                } else {
+                    return Promise.resolve(action(this.state, this.dispatch.bind(this)));
+                }
+            })
+        } else {
+            return Promise.resolve();
         }
     }
 
@@ -103,6 +109,10 @@ export default class Bot extends Rule {
      * @return {Function} Returns a matcher.
      */
     static rule(rule, props, ...children) {
+        if(!props) {
+            props = {};
+        }
+
         let action = props.action || props.handler;
 
         if(!(rule.prototype instanceof Bot) && !children.length && !action) {
@@ -126,10 +136,16 @@ export default class Bot extends Rule {
             children = flatten(children);
         }
 
-        return new rule({
+        const inst = new rule({
             ...omit(props, "action", "handler"),
             action,
             children
         });
+
+        if(inst instanceof Bot) {
+            inst.setState(inst.state);
+        }
+
+        return inst;
     }
 }

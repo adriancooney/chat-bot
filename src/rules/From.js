@@ -1,6 +1,16 @@
 import Rule from "./Rule";
 
 export default class From extends Rule {
+    constructor(props) {
+        const { users, user, rooms, room } = props;
+
+        if([users, user, rooms, room].every(value => typeof value === "undefined")) {
+            throw new Error("Please specify at least one source for a message: user, users, room or rooms");
+        }
+
+        super(props);
+    }
+
     match({ content, ...attrs }) {
         const flags = [];
         const { users, user, rooms, room } = this.props;
@@ -17,7 +27,7 @@ export default class From extends Rule {
             flags.push(attrs.room === room);
         }
 
-        return flags.length && flags.every(b => b);
+        return flags.every(b => b);
     }
 
     toString() {
