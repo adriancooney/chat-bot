@@ -30,13 +30,28 @@ export default function TestBot(bot, props, initialState) {
             assert.deepEqual(message, expected);
         }
 
+        transition(action, state, nextState, transition) {
+            console.log("transitioning: ", transition);
+            return super.transition(action, state, nextState, transition);
+        }
+
+        reduce(state, action, transition) {
+            console.log("reducing: ", action);
+            return super.reduce(action, state, transition);
+        }
+
+        dispatch(type, payload) {
+            console.log("dispatching action: ", typeof type === "object" ? type : { type, payload });
+            return super.dispatch(type, payload);
+        }
+
         handleMessage(message) {
             console.log(`message received { from ${message.author} } ${message.content}`);
             return super.handleMessage(message);
         }
 
         sendMessage(message) {
-            console.log(`sending message: { to ${message.to} } ${message.content}`);
+            console.log(`sending message: `, message);
             if(this.awaiting.length) {
                 this.awaiting.shift().resolve(message);
             } else {
