@@ -2,7 +2,7 @@ import Match from "./Match";
 
 export default class Mention extends Match {
     constructor(props) {
-        const { handle, anywhere, symbol } = props;
+        let { handle, anywhere, symbol } = props;
 
         if(!symbol) {
             symbol = "@";

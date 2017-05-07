@@ -1,3 +1,4 @@
+import { inspect } from "util";
 import Rule from "./Rule";
 
 export default class Match extends Rule {

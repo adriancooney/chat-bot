@@ -19,9 +19,9 @@ export default class Rule {
     }
 
     /** {Function} The debug logger. */
-    static logger = (...args) => console.log(...args);
+    static logger = (message, level) => console.log("  ".repeat(level) + message);
 
-    test(message, debug, level = 0) {
+    async test(message, debug, level = 0) {
         let transform = this.match(message);
         let match = transform !== false;
 
@@ -39,40 +39,38 @@ export default class Rule {
         }
 
         if(debug) {
-            const indent = "  ".repeat(level);
-
             if(level === 0) {
-                Rule.logger(indent + "message: ", message);
+                Rule.logger("message: " + inspect(message), level);
             }
 
-            Rule.logger(indent + `rule: ${this.toString()} = ${match ? "pass" : "fail"}`, `"${message.content}"`);
+            Rule.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"} "${message.content}"`, level);
         }
 
         const action = this.props.action;
 
         if(!match) {
-            return null;
+            return Promise.resolve();
         }
 
         if(action) {
             if(this.props.transform) {
-                return (...args) => action(this.props.transform(message), ...args);
+                return Promise.resolve([ (...args) => action(this.props.transform(message), ...args) ]);
             }
 
             // We bind the message object to the action handler so any transforms
             // applied by the rules are persisted.
-            return action.bind(null, message);
+            return Promise.resolve([ action.bind(null, message) ]);
         }
 
         if(this.props.children.length) {
             const matches = [];
             for(var i = 0, len = this.props.children.length; i < len; i++) {
                 const child = this.props.children[i];
-                const childMatch = child.test(message, debug, level + 1);
+                const childMatch = await child.test(message, debug, level + 1);
 
                 if(childMatch) {
                     if(!this.props.any) {
-                        return [childMatch];
+                        return Promise.resolve(childMatch);
                     }
 
                     matches.push(childMatch);
@@ -80,12 +78,8 @@ export default class Rule {
             }
 
             if(matches.length) {
-                return flatten(matches);
+                return Promise.resolve(flatten(matches));
             }
-        }
-
-        if(this.router) {
-            return this.router.test(message, debug, level + 1);
         }
     }
 

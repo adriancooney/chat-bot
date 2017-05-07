@@ -18,19 +18,19 @@ export default class Bot extends Rule {
      * @param  {Object} message Message object. See message object spec.
      * @return {Promise}        Resolves when the action completes.
      */
-    handleMessage(message) {
+    async handleMessage(message, debug, level) {
         if(!this.router) {
             this.setState(this.state);
         }
 
-        const actions = this.router.test(message, this.debug);
+        const actions = await this.router.test(message, debug || this.debug, level);
 
         if(actions) {
             return Promise.mapSeries(actions, action => {
                 if(action.length === 2) {
-                    return this.dispatch(action(message));
-                } else {
                     return Promise.resolve(action(this.state, this.dispatch.bind(this)));
+                } else {
+                    return this.dispatch(action(message));
                 }
             })
         } else {
@@ -85,8 +85,12 @@ export default class Bot extends Rule {
         return;
     }
 
-    match() {
-        return true;
+    test(message, debug, level) {
+        if(debug) {
+            Rule.logger("bot: " + this.constructor.name, level);
+        }
+
+        return this.handleMessage(message, debug, level + 1).return(false);
     }
 
     toString() {
