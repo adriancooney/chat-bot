@@ -54,12 +54,12 @@ export default class Rule {
 
         if(action) {
             if(this.props.transform) {
-                return Promise.resolve([ (...args) => action(this.props.transform(message), ...args) ]);
+                return Promise.resolve([ (message, ...args) => action(this.props.transform(message), ...args) ]);
             }
 
             // We bind the message object to the action handler so any transforms
             // applied by the rules are persisted.
-            return Promise.resolve([ action.bind(null, message) ]);
+            return Promise.resolve([ action ]);
         }
 
         if(this.props.children.length) {

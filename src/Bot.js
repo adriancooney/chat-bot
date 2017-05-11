@@ -20,18 +20,18 @@ export default class Bot extends Rule {
      */
     async handleMessage(message, debug, level) {
         if(!this.router) {
-            this.setState(this.state);
+            this.initialize();
         }
 
         const actions = await this.router.test(message, debug || this.debug, level);
 
         if(actions) {
             return Promise.mapSeries(actions, action => {
-                if(action.length === 2) {
-                    return Promise.resolve(action(this.state, this.dispatch.bind(this)));
-                } else {
-                    return this.dispatch(action(message));
-                }
+                action = action(message);
+
+                if(action && !action.then && typeof action === "object" && action.type) {
+                    return this.dispatch(action);
+                } else return action;
             })
         } else {
             return Promise.resolve();
@@ -55,6 +55,11 @@ export default class Bot extends Rule {
 
         const mutations = [];
         const nextState = this.reduce(this.state, action, (type, payload = action.payload) => mutations.push({ type, payload }));
+
+        if(this.state === nextState) {
+            return Promise.resolve();
+        }
+
         return this.transitioning = Promise.mapSeries(mutations, this.transition.bind(this, action, this.state, nextState)).then(() => {
             this.transitioning = null;
             this.setState(nextState);
@@ -105,6 +110,10 @@ export default class Bot extends Rule {
         return this.state;
     }
 
+    initialize() {
+        this.setState(this.state);
+    }
+
     /**
      * Create a new matcher from a rule.
      * @param  {Constructor}    rule     A rule constructor.
@@ -147,7 +156,7 @@ export default class Bot extends Rule {
         });
 
         if(inst instanceof Bot) {
-            inst.setState(inst.state);
+            inst.initialize();
         }
 
         return inst;
