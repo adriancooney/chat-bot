@@ -3,8 +3,8 @@ import Promise from "bluebird";
 
 export default function TestBot(bot, props, initialState) {
     return new (class TestBot extends bot {
-        constructor(props) {
-            super(props)
+        constructor(props, context) {
+            super(props, context);
 
             this.messages = [];
             this.awaiting = [];

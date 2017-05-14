@@ -1,13 +1,16 @@
 import { inspect } from "util";
-import { flatten } from "lodash";
+import { flatten, omit } from "lodash";
 
 export default class Rule {
-    constructor(props) {
+    constructor(props, context = {}) {
         this.props = {
             children: [],
             any: false,
             ...props
         };
+
+        this.children = [];
+        this.context = context;
     }
 
     match() {
@@ -15,7 +18,7 @@ export default class Rule {
     }
 
     toString() {
-        return "undefined rule"
+        return "undefined rule";
     }
 
     /** {Function} The debug logger. */
@@ -62,10 +65,10 @@ export default class Rule {
             return Promise.resolve([ action ]);
         }
 
-        if(this.props.children.length) {
+        if(this.children.length) {
             const matches = [];
-            for(var i = 0, len = this.props.children.length; i < len; i++) {
-                const child = this.props.children[i];
+            for(var i = 0, len = this.children.length; i < len; i++) {
+                const child = this.children[i];
                 const childMatch = await child.test(message, debug, level + 1);
 
                 if(childMatch) {
@@ -97,12 +100,77 @@ export default class Rule {
 
         output = ws + output + "\n"
 
-        if(this.props.children.length) {
-            output += this.props.children.map(child => child.print(level + 1)).join("");
+        if(this.children.length) {
+            output += this.children.map(child => child.print(level + 1)).join("");
         } else if(this.router) {
             output += this.router.print(level + 1);
         }
 
         return output;
+    }
+
+    /**
+     * Create a new matcher from a rule.
+     * @param  {Constructor}    rule     A rule constructor.
+     * @param  {Object}         props    The rule's props.
+     * @param  {...Function}    children Nested matchers returned from `Bot.rule`.
+     * @return {Function} Returns a matcher.
+     */
+    static create(rule, props, ...children) {
+        if(!props) {
+            props = {};
+        }
+
+        let action = props.action || props.handler;
+
+        // if(!(rule.prototype instanceof Bot) && !children.length && !action) {
+        //     throw new Error("Leaf matchers must have an action.");
+        // }
+
+        if(typeof action === "string") {
+            action = message => ({ type: props.action, payload: message });
+        }
+
+        if(typeof action === "object") {
+            action = () => (props.action);
+        }
+
+        if(children.length) {
+            if(action) {
+                throw new Error("Rule cannot have an action and children.");
+            }
+
+            // Flatten children to allow passing in arrays of arrays
+            children = flatten(children);
+        }
+
+        return {
+            type: rule,
+            children,
+            props: {
+                ...omit(props, "action", "handler"),
+                action,
+                children
+            }
+        };
+    }
+
+    static mount(rule, context = {}) {
+        const inst = new rule.type(rule.props, context);
+
+        // Convienance assignment
+        inst.context = context;
+
+        if(rule.children.length) {
+            inst.children = rule.children.map(child => {
+                return Rule.mount(child, Object.assign({}, inst.context));
+            });
+        }
+
+        if(typeof inst.initialize === "function") {
+            inst.initialize();
+        }
+
+        return inst;
     }
 }

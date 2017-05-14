@@ -1,13 +1,13 @@
 import Match from "./Match";
 
 export default class Command extends Match {
-    constructor(props) {
+    constructor(props, context) {
         const { name } = props;
 
         super({
             ...props,
             expr: new RegExp(`\\s*${name}(?:\\s+|$)`)
-        });
+        }, context);
     }
 
     toString() {

@@ -1,11 +1,11 @@
 import Rule from "./Rule";
 
 export default class Any extends Rule {
-    constructor(props) {
+    constructor(props, context) {
         super({
             ...props,
             any: true
-        });
+        }, context);
     }
 
     match() {

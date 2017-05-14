@@ -1,11 +1,11 @@
 import { inspect } from "util";
 import Promise from "bluebird";
-import { flatten, omit } from "lodash";
+import { flatten } from "lodash";
 import Rule from "./rules/Rule";
 
 export default class Bot extends Rule {
-    constructor(props) {
-        super(props);
+    constructor(props, context = {}) {
+        super(props, context);
         this.props = props;
         this.queue = [];
         this.debug = true;
@@ -80,7 +80,7 @@ export default class Bot extends Rule {
      */
     setState(state = {}) {
         this.state = state;
-        this.router = this.render();
+        this.router = Bot.mount(this.render(), this.context);
     }
 
     /**
@@ -112,53 +112,5 @@ export default class Bot extends Rule {
 
     initialize() {
         this.setState(this.state);
-    }
-
-    /**
-     * Create a new matcher from a rule.
-     * @param  {Constructor}    rule     A rule constructor.
-     * @param  {Object}         props    The rule's props.
-     * @param  {...Function}    children Nested matchers returned from `Bot.rule`.
-     * @return {Function} Returns a matcher.
-     */
-    static rule(rule, props, ...children) {
-        if(!props) {
-            props = {};
-        }
-
-        let action = props.action || props.handler;
-
-        if(!(rule.prototype instanceof Bot) && !children.length && !action) {
-            throw new Error("Leaf matchers must have an action.");
-        }
-
-        if(typeof action === "string") {
-            action = message => ({ type: props.action, payload: message });
-        }
-
-        if(typeof action === "object") {
-            action = () => (props.action);
-        }
-
-        if(children.length) {
-            if(action) {
-                throw new Error("Rule cannot have an action and children.");
-            }
-
-            // Flatten children to allow passing in arrays of arrays
-            children = flatten(children);
-        }
-
-        const inst = new rule({
-            ...omit(props, "action", "handler"),
-            action,
-            children
-        });
-
-        if(inst instanceof Bot) {
-            inst.initialize();
-        }
-
-        return inst;
     }
 }

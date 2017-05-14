@@ -1,14 +1,14 @@
 import Rule from "./Rule";
 
 export default class From extends Rule {
-    constructor(props) {
+    constructor(props, context) {
         const { users, user, rooms, room } = props;
 
         if([users, user, rooms, room].every(value => typeof value === "undefined")) {
             throw new Error("Please specify at least one source for a message: user, users, room or rooms");
         }
 
-        super(props);
+        super(props, context);
     }
 
     match({ content, ...attrs }) {
