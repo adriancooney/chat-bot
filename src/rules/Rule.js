@@ -42,11 +42,13 @@ export default class Rule {
         }
 
         if(debug) {
+            const shortMessage = message.content.length > 40 ? message.content.slice(0, 40) + "..." : message.content;
+
             if(level === 0) {
-                Rule.logger("message: " + inspect(message), level);
+                Rule.logger(`message: ${shortMessage}`, level);
             }
 
-            Rule.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"} "${message.content}"`, level);
+            Rule.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"}${this.props.action ? "*" : ""} ("${shortMessage}")`, level);
         }
 
         const action = this.props.action;

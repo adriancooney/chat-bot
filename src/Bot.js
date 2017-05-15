@@ -90,7 +90,12 @@ export default class Bot extends Rule {
         return;
     }
 
-    test(message, debug, level) {
+    test(message, debug, level = 0) {
+        if(level === 0) {
+            const shortMessage = message.content.length > 40 ? message.content.slice(0, 40) + "..." : message.content;
+            Rule.logger(`message: ${shortMessage}`, level);
+        }
+
         if(debug) {
             Rule.logger("bot: " + this.constructor.name, level);
         }
@@ -102,8 +107,10 @@ export default class Bot extends Rule {
         return this.constructor.name;
     }
 
-    sendMessage({ to, content })  {
-        return Promise.resolve();
+    sendMessage(to, content)  {
+        return this.context.service.getRoom(to).then(room => {
+            return room.sendMessage(content);
+        });
     }
 
     toJSON() {

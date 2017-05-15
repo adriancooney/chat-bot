@@ -11,23 +11,43 @@ export default class From extends Rule {
         super(props, context);
     }
 
-    match({ content, ...attrs }) {
+    match(message) {
         const flags = [];
         const { users, user, rooms, room } = this.props;
 
         if(users) {
-            flags.push(users.indexOf(attrs.author) > 0);
+            flags.push(users.some(this.fromUser.bind(this, message)));
         } else if(user) {
-            flags.push(attrs.author === user);
+            flags.push(this.fromUser(message, user));
         }
 
         if(rooms) {
-            flags.push(rooms.indexOf(attrs.room) > 0);
+            flags.push(rooms.some(this.fromRoom.bind(this, message)));
         } else if(room) {
-            flags.push(attrs.room === room);
+            flags.push(this.fromRoom(message, room));
         }
 
         return flags.every(b => b);
+    }
+
+    fromRoom(message, room) {
+        if(typeof room === "number") {
+            return message.source.room.id === room;
+        } else if(typeof room === "string") {
+            return message.source.room.title === room;
+        } else {
+            return false;
+        }
+    }
+
+    fromUser(message, user) {
+        if(typeof user === "number") {
+            return message.author.id === user;
+        } else if(typeof user === "string") {
+            return message.author.handle === user;
+        } else {
+            return false;
+        }
     }
 
     toString() {

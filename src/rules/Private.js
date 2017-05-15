@@ -1,8 +1,8 @@
 import Rule from "./Rule";
 
 export default class Private extends Rule {
-    match(input) {
-        return input.private;
+    match(message) {
+        return message.source.room.type === "pair";
     }
 
     toString() {
