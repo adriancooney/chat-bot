@@ -107,17 +107,11 @@ export default class Bot extends Rule {
         return this.constructor.name;
     }
 
-    sendMessage(to, content)  {
-        return this.context.service.getRoom(to).then(room => {
-            return room.sendMessage(content);
-        });
+    initialize() {
+        this.setState(this.state);
     }
 
     toJSON() {
         return this.state;
-    }
-
-    initialize() {
-        this.setState(this.state);
     }
 }
