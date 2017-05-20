@@ -1,5 +1,10 @@
 import { inspect } from "util";
-import { flatten, omit } from "lodash";
+import {
+    flatten,
+    omit,
+    isEqual,
+    isPlainObject
+} from "lodash";
 
 export default class Rule {
     constructor(props, context = {}) {
@@ -9,16 +14,31 @@ export default class Rule {
             ...props
         };
 
+        this.state = null;
         this.children = [];
         this.context = context;
     }
 
     match() {
-        throw new Error("Rule `match` function is not defined.");
+        return true;
     }
 
     toString() {
-        return "undefined rule";
+        return "rule";
+    }
+
+    /**
+     * Set the state of the bot. This triggers a re-render.
+     *
+     * @param {Object} state The next state.
+     */
+    setState(state = {}) {
+        this.state = Object.assign({}, this.state, state);
+
+        if(this.render) {
+            this.tree = this.render();
+            this.mount = Rule.mount(this.tree, this.context, this.mount);
+        }
     }
 
     /** {Function} The debug logger. */
@@ -102,10 +122,12 @@ export default class Rule {
 
         output = ws + output + "\n"
 
-        if(this.children.length) {
-            output += this.children.map(child => child.print(level + 1)).join("");
-        } else if(this.router) {
-            output += this.router.print(level + 1);
+        if(this.mount) {
+            if(Array.isArray(this.mount)) {
+                output += this.mount.map(child => child.print(level + 1)).join("");
+            } else {
+                output += this.mount.print(level + 1);
+            }
         }
 
         return output;
@@ -119,15 +141,19 @@ export default class Rule {
      * @return {Function} Returns a matcher.
      */
     static create(rule, props, ...children) {
+        if(rule === null) {
+            return null;
+        }
+
+        if(typeof rule !== "function") {
+            throw new Error("Rule must be a function.");
+        }
+
         if(!props) {
             props = {};
         }
 
         let action = props.action || props.handler;
-
-        // if(!(rule.prototype instanceof Bot) && !children.length && !action) {
-        //     throw new Error("Leaf matchers must have an action.");
-        // }
 
         if(typeof action === "string") {
             action = message => ({ type: props.action, payload: message });
@@ -143,7 +169,7 @@ export default class Rule {
             }
 
             // Flatten children to allow passing in arrays of arrays
-            children = flatten(children);
+            children = flatten(children).filter(isPlainObject);
         }
 
         return {
@@ -157,17 +183,34 @@ export default class Rule {
         };
     }
 
-    static mount(rule, context = {}) {
-        const inst = new rule.type(rule.props, context);
+    static mount(tree, context = {}, currentMount) {
+        if(tree === null) {
+            return null;
+        }
 
-        // Convienance assignment
-        inst.context = context;
+        if(currentMount && currentMount.tree.type === tree.type && isEqual(tree, currentMount.tree)) {
+            return currentMount;
+        }
 
-        if(rule.children.length) {
-            inst.children = rule.children.map(child => {
-                return Rule.mount(child, Object.assign({}, inst.context));
+        const inst = new tree.type(tree.props, context);
+        const childContext = Object.assign({}, context);
+
+        let mount;
+        if(inst.render) {
+            const rendered = inst.render();
+
+            if(!isPlainObject(rendered) && rendered.type) {
+                throw new Error("render method must return a valid rule.");
+            }
+
+            mount = Rule.mount(rendered, childContext, currentMount ? currentMount.mount : null);
+        } else if(tree.children) {
+            mount = tree.children.map((subtree, i) => {
+                return Rule.mount(subtree, childContext, currentMount && Array.isArray(currentMount.mount) ? currentMount.mount[i] : null);
             });
         }
+
+        Object.assign(inst, { context, tree, mount });
 
         if(typeof inst.initialize === "function") {
             inst.initialize();

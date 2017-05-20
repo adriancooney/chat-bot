@@ -74,16 +74,6 @@ export default class Bot extends Rule {
     }
 
     /**
-     * Set the state of the bot. This triggers a re-render.
-     *
-     * @param {Object} state The next state.
-     */
-    setState(state = {}) {
-        this.state = state;
-        this.router = Bot.mount(this.render(), this.context);
-    }
-
-    /**
      * A no-op transition.
      */
     transition(action, currentState, nextState, mutation) {
