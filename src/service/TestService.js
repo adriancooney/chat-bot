@@ -23,7 +23,7 @@ export default class TestService extends MemoryService {
     }
 
     async getLastMessageInRoom(room, offset = 0) {
-        const messages = await this.getMessagesForRoom(room.id);
+        const messages = await this.getMessagesForRoom(room);
         return messages[messages.length - 1 - offset];
     }
 
@@ -33,7 +33,7 @@ export default class TestService extends MemoryService {
 
     async expectMessageToPerson(person, matcher) {
         return TestService.matchMessage((
-            await this.getLastMessageInRoom(await this.getPrivateRoomForPerson(person.id))
+            await this.getLastMessageInRoom(await this.getPrivateRoomForPerson(person))
         ), matcher);
     }
 

@@ -32,36 +32,37 @@ export default class MemoryService extends EventEmitter {
 
     async createRoom({ title, pair }) {
         const id = ++serial;
-        const room = {
+        const room = await this.addRoom({
             id,
             title,
             pair: !!pair,
             people: []
-        };
+        });
 
-        await this.addRoom(room);
-        await this.addPersonToRoom(this.user.id, id);
-
-        return this.getRoom(id);
+        await this.addPersonToRoom(this.user, room);
+        return room;
     }
 
-    async getMessagesForRoom(id) {
-        return this.messages.filter(message => message.source.id === id);
+    // Done
+    async getMessagesForRoom(room) {
+        return this.messages.filter(message => message.source.id === room.id);
     }
 
     async getRoom(id) {
         return this.rooms.find(room => room.id === id);
     }
 
-    async getRoomsForPerson(id) {
+    // Done
+    async getRoomsForPerson(person) {
         return await Promise.all(this.rooms.filter(({ people }) => {
-            return people.some(person => person === id);
+            return people.some(p => p === person.id);
         }));
     }
 
-    async getPrivateRoomForPerson(id) {
-        return (await this.getRoomsForPerson(id)).find(room => {
-            return room.pair && room.people.includes(this.user.id);
+    // Done
+    async getPrivateRoomForPerson(person) {
+        return (await this.getRoomsForPerson(person)).find(room => {
+            return room.pair && room.people.includes(this.user.id) && room.people.includes(person.id);
         });
     }
 
@@ -69,8 +70,9 @@ export default class MemoryService extends EventEmitter {
         return this.rooms;
     }
 
-    async getPeopleForRoom(id) {
-        return Promise.all((await this.getRoom(id)).people.map(person => this.getPerson(person)));
+    // Done
+    async getPeopleForRoom(room) {
+        return Promise.all(room.people.map(person => this.getPerson(person)));
     }
 
     async addPerson(person) {
@@ -89,7 +91,7 @@ export default class MemoryService extends EventEmitter {
         const person = await this.getPerson(id);
 
         if(this.defaultRoom) {
-            await this.addPersonToRoom(person.id, this.defaultRoom.id);
+            await this.addPersonToRoom(person, this.defaultRoom);
         }
 
         // Create the pair room
@@ -99,8 +101,8 @@ export default class MemoryService extends EventEmitter {
                 pair: true
             });
 
-            await this.addPersonToRoom(this.user.id, privateRoom.id);
-            await this.addPersonToRoom(person.id, privateRoom.id);
+            await this.addPersonToRoom(this.user, privateRoom);
+            await this.addPersonToRoom(person, privateRoom);
         }
 
         return person;
@@ -118,14 +120,13 @@ export default class MemoryService extends EventEmitter {
         return this.people;
     }
 
-    async addPersonToRoom(personId, roomId) {
-        const room = await this.getRoom(roomId);
-
+    // Done
+    async addPersonToRoom(person, room) {
         Object.assign(room, {
-            people: uniq(room.people.concat(personId))
+            people: uniq(room.people.concat(person.id))
         });
 
-        this.emit("room:new:person", { personId, roomId });
+        this.emit("room:new:person", { person, room });
     }
 
     async addMessage(message) {
@@ -135,12 +136,13 @@ export default class MemoryService extends EventEmitter {
         return message;
     }
 
-    async sendMessageToRoom(id, message, author) {
+    // Done
+    async sendMessageToRoom(room, message, author) {
         if(typeof message === "string") {
             message = { content: message };
         }
 
-        const room = await this.getRoom(id);
+        room = await this.getRoom(room.id);
 
         const newMessage = {
             id: ++serial,
@@ -155,36 +157,42 @@ export default class MemoryService extends EventEmitter {
         return this.addMessage(newMessage);
     }
 
-    async sendMessageToPerson(id, message, author) {
+    // Done
+    async sendMessageToPerson(person, message, author) {
         if(typeof message === "string") {
             message = { content: message };
         }
 
+        person = await this.getPerson(person.id);
+
         const pairRoom = this.rooms.find(room => {
-            return room.people.length === 2 && room.people.includes(id) && room.people.includes(author ? author.id : this.user.id);
+            return room.pair && room.people.includes(person.id) && room.people.includes(author ? author.id : this.user.id);
         });
 
-        return this.sendMessageToRoom(pairRoom.id, Object.assign(message, {
+        return this.sendMessageToRoom(pairRoom, Object.assign(message, {
             private: true
         }), author);
     }
 
-    async markRoomAsRead(roomId, personId) {
-        return (await this.getMessagesForRoom(roomId)).forEach(message => {
+    // Done
+    async markRoomAsRead(room, person) {
+        return (await this.getMessagesForRoom(room)).forEach(message => {
             Object.assign(message, {
-                read: uniq(message.read.concat(personId))
+                read: uniq(message.read.concat(person.id))
             });
         });
     }
 
-    async getUnreadCountForRoom(roomId, personId) {
-        return (await this.getMessagesForRoom(roomId)).filter(message => !message.read.includes(personId)).length;
+    // Done
+    async getUnreadCountForRoom(room, person) {
+        return (await this.getMessagesForRoom(room)).filter(message => !message.read.includes(person)).length;
     }
 
-    async getUnreadCountForPerson(personId) {
+    // Done
+    async getUnreadCountForPerson(person) {
         return sum(
             await Promise.all(
-                (await this.getRoomsForPerson(personId)).map(room => this.getUnreadCountForRoom(room.id, personId))
+                (await this.getRoomsForPerson(person)).map(room => this.getUnreadCountForRoom(room, person.id))
             )
         );
     }
@@ -198,7 +206,7 @@ export default class MemoryService extends EventEmitter {
     }
 
     reply(receive, input) {
-        return this.sendMessageToRoom(receive.source.id, input);
+        return this.sendMessageToRoom(receive.source, input);
     }
 
     formatMention(person) {
