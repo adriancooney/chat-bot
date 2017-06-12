@@ -1,4 +1,5 @@
 export Bot from "./Bot";
-export TestBot from "./TestBot";
+export Service from "./Service";
+export TestService from "./service/TestService";
+export MemoryService from "./service/MemoryService";
 export * from "./rules";
-export * as bots from "./bots";

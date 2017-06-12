@@ -2,7 +2,7 @@ import Rule from "./Rule";
 
 export default class Private extends Rule {
     match(message) {
-        return message.source.room.type === "pair";
+        return !!message.private;
     }
 
     toString() {

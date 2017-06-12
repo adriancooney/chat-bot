@@ -1,93 +1,107 @@
 export default class Service {
-    update(PersonUpdate) {
-        throw new Error("Not yet implemented by server");
+    constructor() {}
+
+    addRoom() {
+        throw new Error("Not yet implemented.");
     }
 
-    updateHandle(PersonHandle) {
-        throw new Error("Not yet implemented by server");
+    createRoom() {
+        throw new Error("Not yet implemented.");
     }
 
-    updateMessage(MessageIdentifer, MessageUpdate) {
-        throw new Error("Not yet implemented by server");
+    getMessagesForRoom() {
+        throw new Error("Not yet implemented.");
     }
 
-    createPerson(Person) {
-        throw new Error("Not yet implemented by server");
+    getRoom() {
+        throw new Error("Not yet implemented.");
     }
 
-    getPerson(PersonIdentifier) {
-        throw new Error("Not yet implemented by server");
+    getRoomsForPerson() {
+        throw new Error("Not yet implemented.");
     }
 
-    getPersonByHandle(PersonHandle) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    getAllPeople() {
-        throw new Error("Not yet implemented by server");
-    }
-
-    updatePerson(PersonIdentifier, PersonUpdate) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    addPersonToRoom(Person, RoomIdentifer) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    removePersonFromRoom(PersonIdentifier, RoomIdentifer) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    removePerson(PersonIdentifier) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    sendMessageToPerson(PersonIdentifier, Message|String) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    createRoom(Room) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    getRoom(RoomIdentifer) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    getRoomPeople(RoomIdentifer) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    getRoomWithPeople(Person[]) {
-        throw new Error("Not yet implemented by server");
-    }
-
-    getRoomByTitle(RoomTitle) {
-        throw new Error("Not yet implemented by server");
+    getPrivateRoomForPerson() {
+        throw new Error("Not yet implemented.");
     }
 
     getAllRooms() {
-        throw new Error("Not yet implemented by server");
+        throw new Error("Not yet implemented.");
     }
 
-    updateRoom(RoomIdentifer, RoomUpdate) {
-        throw new Error("Not yet implemented by server");
+    getPeopleForRoom() {
+        throw new Error("Not yet implemented.");
     }
 
-    updateRoomTitle(RoomIdentifer, RoomTitle) {
-        throw new Error("Not yet implemented by server");
+    addPerson() {
+        throw new Error("Not yet implemented.");
     }
 
-    removeRoom(RoomIdentifer) {
-        throw new Error("Not yet implemented by server");
+    createPerson() {
+        throw new Error("Not yet implemented.");
     }
 
-    sendMessageToRoom(RoomIdentifer, Message|String) {
-        throw new Error("Not yet implemented by server");
+    getPerson() {
+        throw new Error("Not yet implemented.");
     }
 
-    typing(boolean) {
-        throw new Error("Not yet implemented by server");
+    getPersonByHandle() {
+        throw new Error("Not yet implemented.");
+    }
+
+    getAllPeople() {
+        throw new Error("Not yet implemented.");
+    }
+
+    addPersonToRoom() {
+        throw new Error("Not yet implemented.");
+    }
+
+    addMessage() {
+        throw new Error("Not yet implemented.");
+    }
+
+    sendMessageToRoom() {
+        throw new Error("Not yet implemented.");
+    }
+
+    sendMessageToPerson() {
+        throw new Error("Not yet implemented.");
+    }
+
+    markRoomAsRead() {
+        throw new Error("Not yet implemented.");
+    }
+
+    getUnreadCountForRoom() {
+        throw new Error("Not yet implemented.");
+    }
+
+    getUnreadCountForPerson() {
+        throw new Error("Not yet implemented.");
+    }
+
+    isPerson() {
+        throw new Error("Not yet implemented.");
+    }
+
+    isRoom() {
+        throw new Error("Not yet implemented.");
+    }
+
+    comparePerson() {
+        throw new Error("Not yet implemented.");
+    }
+
+    compareRoom() {
+        throw new Error("Not yet implemented.");
+    }
+
+    reply() {
+        throw new Error("Not yet implemented.");
+    }
+
+    formatMention() {
+        throw new Error("Not yet implemented.");
     }
 }

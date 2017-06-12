@@ -15,8 +15,11 @@ export default class Rule {
         };
 
         this.state = null;
-        this.children = [];
         this.context = context;
+    }
+
+    get logger() {
+        return this.context && this.context.logger ? this.context.logger : Rule.logger;
     }
 
     match() {
@@ -42,74 +45,59 @@ export default class Rule {
     }
 
     /** {Function} The debug logger. */
-    static logger = (message, level) => console.log("  ".repeat(level) + message);
+    static logger = (message, { indent } = {}) => console.log("  ".repeat(indent) + message);
 
     async test(message, debug, level = 0) {
-        let transform = this.match(message);
-        let match = transform !== false;
+        const transform = this.match(message);
+        const match = transform !== false || typeof transform === "undefined";
 
-        if(typeof transform === "string") {
-            transform = { content: transform };
-        }
-
-        if(typeof transform !== "object") {
-            transform = null;
-        }
-
-        if(transform) {
-            // Apply the transform to the message for all children
-            message = Object.assign({}, message, transform);
+        if(match) {
+            message = Rule.transform(message, transform);
         }
 
         if(debug) {
             const shortMessage = message.content.length > 40 ? message.content.slice(0, 40) + "..." : message.content;
 
             if(level === 0) {
-                Rule.logger(`message: ${shortMessage}`, level);
+                this.logger(`message: ${shortMessage}`, { indent: level });
             }
 
-            Rule.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"}${this.props.action ? "*" : ""} ("${shortMessage}")`, level);
+            this.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"}${this.props.action ? "*" : ""} ("${shortMessage}")`, { indent: level });
+        }
+
+        if(!match) {
+            return;
         }
 
         const action = this.props.action;
 
-        if(!match) {
-            return Promise.resolve();
-        }
-
         if(action) {
-            if(this.props.transform) {
-                return Promise.resolve([ (message, ...args) => action(this.props.transform(message), ...args) ]);
-            }
-
             // We bind the message object to the action handler so any transforms
             // applied by the rules are persisted.
-            return Promise.resolve([ action ]);
+            return [ action.bind(null, message) ];
         }
 
-        if(this.children.length) {
+        if(Array.isArray(this.mount)) {
             const matches = [];
-            for(var i = 0, len = this.children.length; i < len; i++) {
-                const child = this.children[i];
+            for(var i = 0, len = this.mount.length; i < len; i++) {
+                const child = this.mount[i];
                 const childMatch = await child.test(message, debug, level + 1);
 
                 if(childMatch) {
                     if(!this.props.any) {
-                        return Promise.resolve(childMatch);
+                        return childMatch;
                     }
 
                     matches.push(childMatch);
                 }
             }
 
-            if(matches.length) {
-                return Promise.resolve(flatten(matches));
-            }
+            return flatten(matches);
+        } else if(this.mount) {
+            return this.mount.test(message, debug, level + 1);
+        } else {
+            return [];
         }
-    }
-
-    inspect() {
-        return this.print();
     }
 
     print(level = 0) {
@@ -188,8 +176,10 @@ export default class Rule {
             return null;
         }
 
-        if(currentMount && currentMount.tree.type === tree.type && isEqual(tree, currentMount.tree)) {
+        if(currentMount instanceof Rule && currentMount.tree.type === tree.type && isEqual(currentMount.tree, tree)) {
             return currentMount;
+        } else if(currentMount && currentMount.onUnmount) {
+            currentMount.onUnmount.call(currentMount);
         }
 
         const inst = new tree.type(tree.props, context);
@@ -208,6 +198,8 @@ export default class Rule {
             mount = tree.children.map((subtree, i) => {
                 return Rule.mount(subtree, childContext, currentMount && Array.isArray(currentMount.mount) ? currentMount.mount[i] : null);
             });
+        } else {
+            mount = null;
         }
 
         Object.assign(inst, { context, tree, mount });
@@ -216,6 +208,27 @@ export default class Rule {
             inst.initialize();
         }
 
+        if(inst.onMount) {
+            inst.onMount.call(inst);
+        }
+
         return inst;
+    }
+
+    static transform(message, transform) {
+        if(typeof transform === "string") {
+            transform = { content: transform };
+        }
+
+        if(typeof transform !== "object") {
+            transform = null;
+        }
+
+        if(transform) {
+            // Apply the transform to the message for all children
+            message = Object.assign({}, message, transform);
+        }
+
+        return message;
     }
 }

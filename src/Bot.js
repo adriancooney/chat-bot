@@ -1,14 +1,25 @@
 import { inspect } from "util";
-import Promise from "bluebird";
-import { flatten } from "lodash";
+import { flatten, difference, cloneDeep } from "lodash";
+import Service from "./Service";
 import Rule from "./rules/Rule";
 
 export default class Bot extends Rule {
     constructor(props, context = {}) {
         super(props, context);
         this.props = props;
+        this.stack = [];
         this.queue = [];
         this.debug = true;
+
+        if(context && context.service) {
+            const methods = difference(Object.getOwnPropertyNames(Service.prototype), ["init", "emit", "constructor"]);
+
+            methods.forEach(fn => {
+                this[fn] = (...args) => {
+                    return this.context.service[fn].apply(this.context.service, args);
+                };
+            });
+        }
     }
 
     /**
@@ -19,22 +30,20 @@ export default class Bot extends Rule {
      * @return {Promise}        Resolves when the action completes.
      */
     async handleMessage(message, debug, level) {
-        if(!this.router) {
+        if(!this.mount) {
             this.initialize();
         }
 
-        const actions = await this.router.test(message, debug || this.debug, level);
+        const actions = await this.mount.test(message, debug || this.debug, level);
 
         if(actions) {
-            return Promise.mapSeries(actions, action => {
-                action = action(message);
+            const results = [];
 
-                if(action && !action.then && typeof action === "object" && action.type) {
-                    return this.dispatch(action);
-                } else return action;
-            })
-        } else {
-            return Promise.resolve();
+            for(let action of actions) {
+                results.push(await action(message));
+            }
+
+            return results;
         }
     }
 
@@ -47,29 +56,36 @@ export default class Bot extends Rule {
      * @return {Promise}        Resolves when the state has been reduced and all transitions are complete.
      */
     dispatch(type, payload) {
-        const action = typeof type === "object" ? type : { type, payload };
-
         if(this.transitioning) {
-            return new Promise((resolve, reject) => this.queue.unshift({ action, resolve, reject }));
+            return new Promise((resolve, reject) => {
+                this.queue.push({ type, payload, resolve, reject });
+            });
         }
 
+        const action = typeof type === "object" ? type : { type, payload };
         const mutations = [];
         const nextState = this.reduce(this.state, action, (type, payload = action.payload) => mutations.push({ type, payload }));
 
         if(this.state === nextState) {
-            return Promise.resolve();
+            return Promise.resolve(null);
         }
 
-        return this.transitioning = Promise.mapSeries(mutations, this.transition.bind(this, action, this.state, nextState)).then(() => {
-            this.transitioning = null;
+        return this.transitioning = (async () => {
+            for(let mutation of mutations) {
+                if(this.debug) {
+                    this.logger(`transition: ${mutation.type}`);
+                }
+
+                await this.transition(action, this.state, nextState, mutation);
+            }
+        })().then(() => {
             this.setState(nextState);
+            this.transitioning = null;
 
             if(this.queue.length) {
-                const { action, resolve, reject } = this.queue.pop();
-                this.dispatch(action).then(reject, resolve);
+                const next = this.queue.shift();
+                this.dispatch(next.type, next.payload).then(next.resolve, next.reject);
             }
-
-            return null;
         });
     }
 
@@ -80,17 +96,36 @@ export default class Bot extends Rule {
         return;
     }
 
-    test(message, debug, level = 0) {
+    async test(message, debug, level = 0) {
+        const transform = this.match(message);
+        const match = transform !== false;
+
+        if(!match) {
+            return;
+        }
+
+        message = Rule.transform(message, transform);
+
         if(level === 0) {
             const shortMessage = message.content.length > 40 ? message.content.slice(0, 40) + "..." : message.content;
-            Rule.logger(`message: ${shortMessage}`, level);
+            this.logger(`message: ${shortMessage}`, { indent: level });
         }
 
         if(debug) {
-            Rule.logger("bot: " + this.constructor.name, level);
+            this.logger(`bot: ${this.constructor.name}`, { indent: level });
         }
 
-        return this.handleMessage(message, debug, level + 1).return(false);
+        await this.handleMessage(message, debug, level + 1);
+
+        return false;
+    }
+
+    pushState() {
+        return this.stack.push(cloneDeep(this.state));
+    }
+
+    popState() {
+        return this.setState(this.stack.pop());
     }
 
     toString() {

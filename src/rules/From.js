@@ -1,3 +1,4 @@
+import { inspect } from "util";
 import Rule from "./Rule";
 
 export default class From extends Rule {
@@ -32,9 +33,11 @@ export default class From extends Rule {
 
     fromRoom(message, room) {
         if(typeof room === "number") {
-            return message.source.room.id === room;
+            return message.source.id === room;
         } else if(typeof room === "string") {
-            return message.source.room.title === room;
+            return message.source.title === room;
+        } else if(this.context.service.compareRoom(message.source, room) === 0) {
+            return true;
         } else {
             return false;
         }
@@ -45,6 +48,8 @@ export default class From extends Rule {
             return message.author.id === user;
         } else if(typeof user === "string") {
             return message.author.handle === user;
+        } else if(this.context.service.comparePerson(message.author, user) === 0) {
+            return true;
         } else {
             return false;
         }
@@ -54,11 +59,22 @@ export default class From extends Rule {
         const sources = [];
         const { users, user, rooms, room } = this.props;
 
-        if(user) sources.push(`user ${user}`);
-        if(users) sources.push(`users (${users.join(", ")})`);
-        if(room) sources.push(`room ${room}`);
-        if(rooms) sources.push(`rooms (${rooms.join(", ")})`);
+        if(user) {
+            sources.push(`user @${user.handle}`);
+        }
 
-        return `from ${sources.join(", ")}`;
+        if(users) {
+            sources.push(`users (${users.map(user => `@${user.handle}`).join(", ")})`);
+        }
+
+        if(room) {
+            sources.push(`room "${room.title}"`);
+        }
+
+        if(rooms) {
+            sources.push(`rooms (${rooms.map(room => `"${room.title}"`).join(", ")})`);
+        }
+
+        return `from ${sources.join(" and ")}`;
     }
 }
