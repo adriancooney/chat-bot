@@ -41,6 +41,10 @@ export default class Service {
         throw new Error("Not yet implemented.");
     }
 
+    getCurrentUser() {
+        throw new Error("Not yet implemented.");
+    }
+
     getPerson() {
         throw new Error("Not yet implemented.");
     }

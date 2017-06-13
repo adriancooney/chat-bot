@@ -39,8 +39,7 @@ export default class Rule {
         this.state = Object.assign({}, this.state, state);
 
         if(this.render) {
-            this.tree = this.render();
-            this.mount = Rule.mount(this.tree, this.context, this.mount);
+            this.mount = Rule.mount(this.render(), Object.assign({}, this.context), this.mount);
         }
     }
 
@@ -196,7 +195,13 @@ export default class Rule {
             mount = Rule.mount(rendered, childContext, currentMount ? currentMount.mount : null);
         } else if(tree.children) {
             mount = tree.children.map((subtree, i) => {
-                return Rule.mount(subtree, childContext, currentMount && Array.isArray(currentMount.mount) ? currentMount.mount[i] : null);
+                const mount = currentMount && Array.isArray(currentMount.mount)
+                    ? currentMount.mount.find(submount => {
+                        return submount.props.key === subtree.props.key;
+                    }) || currentMount.mount[i]
+                    : null
+
+                return Rule.mount(subtree, childContext, mount);
             });
         } else {
             mount = null;

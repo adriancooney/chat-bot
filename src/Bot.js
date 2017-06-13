@@ -11,15 +11,6 @@ export default class Bot extends Rule {
         this.queue = [];
         this.debug = true;
 
-        if(context && context.service) {
-            const methods = difference(Object.getOwnPropertyNames(Service.prototype), ["init", "emit", "constructor"]);
-
-            methods.forEach(fn => {
-                this[fn] = (...args) => {
-                    return this.context.service[fn].apply(this.context.service, args);
-                };
-            });
-        }
     }
 
     /**
@@ -133,6 +124,16 @@ export default class Bot extends Rule {
     }
 
     initialize() {
+        if(this.context && this.context.service) {
+            const methods = difference(Object.getOwnPropertyNames(Service.prototype), ["init", "emit", "constructor"]);
+
+            methods.forEach(fn => {
+                this[fn] = (...args) => {
+                    return this.context.service[fn].apply(this.context.service, args);
+                };
+            });
+        }
+
         this.setState(this.state);
     }
 

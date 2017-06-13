@@ -6,7 +6,7 @@ export default class Command extends Match {
 
         super({
             ...props,
-            expr: new RegExp(`\\s*(${name})(?:\\s+|$)`),
+            expr: new RegExp(`^\\s*(${name})(?:\\s+|$)`),
             groups: ["command"]
         }, context);
     }

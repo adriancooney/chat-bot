@@ -30,7 +30,7 @@ export default class MemoryService extends EventEmitter {
         return room;
     }
 
-    async createRoom({ title, pair }) {
+    async createRoom({ title, pair, people }) {
         const id = ++serial;
         const room = await this.addRoom({
             id,
@@ -40,10 +40,16 @@ export default class MemoryService extends EventEmitter {
         });
 
         await this.addPersonToRoom(this.user, room);
+
+        if(people && people.length) {
+            for(let person of people) {
+                await this.addPersonToRoom(person, room);
+            }
+        }
+
         return room;
     }
 
-    // Done
     async getMessagesForRoom(room) {
         return this.messages.filter(message => message.source.id === room.id);
     }
@@ -52,14 +58,12 @@ export default class MemoryService extends EventEmitter {
         return this.rooms.find(room => room.id === id);
     }
 
-    // Done
     async getRoomsForPerson(person) {
         return await Promise.all(this.rooms.filter(({ people }) => {
             return people.some(p => p === person.id);
         }));
     }
 
-    // Done
     async getPrivateRoomForPerson(person) {
         return (await this.getRoomsForPerson(person)).find(room => {
             return room.pair && room.people.includes(this.user.id) && room.people.includes(person.id);
@@ -70,7 +74,6 @@ export default class MemoryService extends EventEmitter {
         return this.rooms;
     }
 
-    // Done
     async getPeopleForRoom(room) {
         return Promise.all(room.people.map(person => this.getPerson(person)));
     }
@@ -120,7 +123,10 @@ export default class MemoryService extends EventEmitter {
         return this.people;
     }
 
-    // Done
+    async getCurrentUser() {
+        return this.user;
+    }
+
     async addPersonToRoom(person, room) {
         Object.assign(room, {
             people: uniq(room.people.concat(person.id))
@@ -136,7 +142,6 @@ export default class MemoryService extends EventEmitter {
         return message;
     }
 
-    // Done
     async sendMessageToRoom(room, message, author) {
         if(typeof message === "string") {
             message = { content: message };
@@ -157,7 +162,6 @@ export default class MemoryService extends EventEmitter {
         return this.addMessage(newMessage);
     }
 
-    // Done
     async sendMessageToPerson(person, message, author) {
         if(typeof message === "string") {
             message = { content: message };
@@ -174,7 +178,6 @@ export default class MemoryService extends EventEmitter {
         }), author);
     }
 
-    // Done
     async markRoomAsRead(room, person) {
         return (await this.getMessagesForRoom(room)).forEach(message => {
             Object.assign(message, {
@@ -183,12 +186,10 @@ export default class MemoryService extends EventEmitter {
         });
     }
 
-    // Done
     async getUnreadCountForRoom(room, person) {
         return (await this.getMessagesForRoom(room)).filter(message => !message.read.includes(person)).length;
     }
 
-    // Done
     async getUnreadCountForPerson(person) {
         return sum(
             await Promise.all(

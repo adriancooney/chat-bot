@@ -17,11 +17,13 @@ export default class Match extends Rule {
 
             if(match) {
                 const transform = {
-                    content: content.slice(match[0].length)
+                    content: content.slice(match.index + match[0].length)
                 };
 
                 if(groups) {
-                    groups.reduce((transform, group, i) => Object.assign(transform, { [group]: match[i + 1] }), transform);
+                    groups.reduce((transform, group, i) => Object.assign(transform, {
+                        [group]: match[i + 1]
+                    }), transform);
                 }
 
                 return transform;
