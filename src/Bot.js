@@ -10,7 +10,6 @@ export default class Bot extends Rule {
         this.stack = [];
         this.queue = [];
         this.debug = true;
-
     }
 
     /**
@@ -46,7 +45,7 @@ export default class Bot extends Rule {
      * @param  {Object} payload The action payload.
      * @return {Promise}        Resolves when the state has been reduced and all transitions are complete.
      */
-    dispatch(type, payload) {
+    async dispatch(type, payload) {
         if(this.transitioning) {
             return new Promise((resolve, reject) => {
                 this.queue.push({ type, payload, resolve, reject });
@@ -58,8 +57,10 @@ export default class Bot extends Rule {
         const nextState = this.reduce(this.state, action, (type, payload = action.payload) => mutations.push({ type, payload }));
 
         if(this.state === nextState) {
-            return Promise.resolve(null);
+            return null;
         }
+
+        await this.setState(nextState);
 
         return this.transitioning = (async () => {
             for(let mutation of mutations) {
@@ -70,7 +71,6 @@ export default class Bot extends Rule {
                 await this.transition(action, this.state, nextState, mutation);
             }
         })().then(() => {
-            this.setState(nextState);
             this.transitioning = null;
 
             if(this.queue.length) {
@@ -80,10 +80,28 @@ export default class Bot extends Rule {
         });
     }
 
+    async onMount() {
+        if(this.context && this.context.service) {
+            const methods = difference(Object.getOwnPropertyNames(Service.prototype), ["init", "emit", "constructor"]);
+
+            methods.forEach(fn => {
+                this[fn] = (...args) => {
+                    return this.context.service[fn].apply(this.context.service, args);
+                };
+            });
+        }
+
+        await this.transition(null, undefined, this.state, null);
+    }
+
+    async onUnmount() {
+        return;
+    }
+
     /**
      * A no-op transition.
      */
-    transition(action, currentState, nextState, mutation) {
+    async transition(action, currentState, nextState, mutation) {
         return;
     }
 
@@ -121,20 +139,6 @@ export default class Bot extends Rule {
 
     toString() {
         return this.constructor.name;
-    }
-
-    initialize() {
-        if(this.context && this.context.service) {
-            const methods = difference(Object.getOwnPropertyNames(Service.prototype), ["init", "emit", "constructor"]);
-
-            methods.forEach(fn => {
-                this[fn] = (...args) => {
-                    return this.context.service[fn].apply(this.context.service, args);
-                };
-            });
-        }
-
-        this.setState(this.state);
     }
 
     toJSON() {

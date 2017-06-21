@@ -1,7 +1,8 @@
+import http from "http";
 import { cloneDeep, pick, isPlainObject, last } from "lodash";
-import MemoryService from "./MemoryService";
+import LoggingService from "./LoggingService";
 
-export default class TestService extends MemoryService {
+export default class TestService extends LoggingService {
     constructor() {
         super();
 
@@ -82,5 +83,58 @@ export default class TestService extends MemoryService {
                 }
             );
         }
+    }
+
+    listen(port = 8075) {
+        this.server = http.createServer((req, res) => {
+            return this.handleRequest(req, res).catch(err => {
+                return {
+                    status: 500,
+                    body: {
+                        error: true,
+                        meta: {
+                            message: err.message,
+                            stack: err.stack
+                        }
+                    }
+                }
+            }).then(({ status, body }) => {
+                res.writeHead(status || 200, {
+                    "Content-Type": "application/json"
+                });
+
+                res.write(JSON.stringify(body));
+                res.end();
+            });
+        });
+
+        this.server.listen(port);
+    }
+
+    async handleRequest(req, res) {
+        if(req.method !== "POST") {
+            throw new Error("The bot API only accepts POST requests.");
+        }
+
+        const body = JSON.parse(await new Promise((resolve, reject) => {
+            const chunks = [];
+            req.on("data", chunk => chunks.push(chunk));
+            req.on("error", reject);
+            req.on("end", () =>resolve(Buffer.concat(chunks).toString()));
+        }));
+
+        if(!body.method) {
+            throw new Error("Body missing `method` property.");
+        }
+
+        if(!this[body.method]) {
+            throw new Error(`Bot does not have method \`${body.method}\`.`);
+        }
+
+        return {
+            body: {
+                data: await this[body.method].apply(this, body.args)
+            }
+        };
     }
 }

@@ -3,7 +3,7 @@ import Match from "./Match";
 export default class Mention extends Match {
     constructor(props, context) {
         let { anywhere, symbol } = props;
-        const handle = props.handle || context.user.handle;
+        const handle = props.handle || context.service.user.handle;
 
         if(!symbol) {
             symbol = "@";
@@ -24,6 +24,6 @@ export default class Mention extends Match {
     }
 
     toString() {
-        return `mention @${this.props.handle || this.context.user.handle}`;
+        return `mention @${this.props.handle || this.context.service.user.handle}`;
     }
 }

@@ -1,9 +1,17 @@
 {
   "name": "chat-bot",
-  "main": "src/index.js",
+  "main": "build/src/index.js",
+  "version": "0.0.0",
   "scripts": {
-    "test": "mocha --compilers js:babel-register"
+    "test": "mocha --compilers js:babel-register",
+    "build": "babel src -d build/"
   },
+  "bin": {
+    "chat-bot": "./bin/chat-bot"
+  },
+  "files": [
+    "build"
+  ],
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-plugin-object-rest-spread": "^0.0.0",
@@ -16,7 +24,6 @@
     "babel-plugin-transform-react-jsx": "^6.24.1",
     "babel-preset-env": "^1.4.0",
     "babel-preset-stage-0": "^6.24.1",
-    "babel-register": "^6.24.1",
     "babel-register": "^6.24.1",
     "mocha": "^3.3.0"
   },
@@ -52,5 +59,8 @@
       "babel-plugin-transform-export-extensions",
       "babel-plugin-transform-function-bind"
     ]
+  },
+  "dependencies": {
+    "lodash": "^4.17.4"
   }
 }

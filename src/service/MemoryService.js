@@ -58,6 +58,10 @@ export default class MemoryService extends EventEmitter {
         return this.rooms.find(room => room.id === id);
     }
 
+    async getRoomByTitle(title) {
+        return this.rooms.find(room => room.title === title);
+    }
+
     async getRoomsForPerson(person) {
         return await Promise.all(this.rooms.filter(({ people }) => {
             return people.some(p => p === person.id);
@@ -136,7 +140,6 @@ export default class MemoryService extends EventEmitter {
     }
 
     async addMessage(message) {
-        console.log(`${message.source.title} -> @${message.author.handle}: ${message.content}`);
         this.messages = this.messages.concat(message);
         this.emit("message", message);
         return message;

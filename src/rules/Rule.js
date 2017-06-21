@@ -35,11 +35,11 @@ export default class Rule {
      *
      * @param {Object} state The next state.
      */
-    setState(state = {}) {
+    async setState(state = {}) {
         this.state = Object.assign({}, this.state, state);
 
         if(this.render) {
-            this.mount = Rule.mount(this.render(), Object.assign({}, this.context), this.mount);
+            this.mount = await Rule.mount(this.render(), Object.assign({}, this.context), this.mount);
         }
     }
 
@@ -170,7 +170,7 @@ export default class Rule {
         };
     }
 
-    static mount(tree, context = {}, currentMount) {
+    static async mount(tree, context = {}, currentMount) {
         if(tree === null) {
             return null;
         }
@@ -178,7 +178,7 @@ export default class Rule {
         if(currentMount instanceof Rule && currentMount.tree.type === tree.type && isEqual(currentMount.tree, tree)) {
             return currentMount;
         } else if(currentMount && currentMount.onUnmount) {
-            currentMount.onUnmount.call(currentMount);
+            await currentMount.onUnmount.call(currentMount);
         }
 
         const inst = new tree.type(tree.props, context);
@@ -192,9 +192,9 @@ export default class Rule {
                 throw new Error("render method must return a valid rule.");
             }
 
-            mount = Rule.mount(rendered, childContext, currentMount ? currentMount.mount : null);
+            mount = await Rule.mount(rendered, childContext, currentMount ? currentMount.mount : null);
         } else if(tree.children) {
-            mount = tree.children.map((subtree, i) => {
+            mount = await Promise.all(tree.children.map((subtree, i) => {
                 const mount = currentMount && Array.isArray(currentMount.mount)
                     ? currentMount.mount.find(submount => {
                         return submount.props.key === subtree.props.key;
@@ -202,19 +202,15 @@ export default class Rule {
                     : null
 
                 return Rule.mount(subtree, childContext, mount);
-            });
+            }));
         } else {
             mount = null;
         }
 
         Object.assign(inst, { context, tree, mount });
 
-        if(typeof inst.initialize === "function") {
-            inst.initialize();
-        }
-
         if(inst.onMount) {
-            inst.onMount.call(inst);
+            await inst.onMount();
         }
 
         return inst;
