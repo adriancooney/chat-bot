@@ -1,6 +1,6 @@
 {
   "name": "chat-bot",
-  "main": "build/src/index.js",
+  "main": "build/index.js",
   "version": "0.1.2",
   "scripts": {
     "test": "mocha --compilers js:babel-register",
