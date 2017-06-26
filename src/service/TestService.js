@@ -47,11 +47,11 @@ export default class TestService extends LoggingService {
     }
 
     async dispatchMessageToRoom(...args) {
-        return this.dispatch(await this.sendMessageToRoom(...args));
+        return this.dispatch(await this.sendMessageToRoom(...args), true);
     }
 
     async dispatchMessageToPerson(...args) {
-        return this.dispatch(await this.sendMessageToPerson(...args));
+        return this.dispatch(await this.sendMessageToPerson(...args), true);
     }
 
     static matchMessage(message, matcher) {

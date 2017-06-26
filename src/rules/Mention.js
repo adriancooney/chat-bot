@@ -1,22 +1,28 @@
+import Rule from "./Rule";
 import Match from "./Match";
 
-export default class Mention extends Match {
+export default class Mention extends Rule {
     constructor(props, context) {
-        let { anywhere, symbol } = props;
-        const handle = props.handle || context.service.user.handle;
+        super(props, context);
+
+        if(!props.handle && !context.service.user.handle) {
+            throw new Error("Please specify a handle to match.");
+        }
+    }
+
+    render() {
+        const handle = this.props.handle || this.context.service.user.handle;
+        let symbol = this.props.symbol;
 
         if(!symbol) {
             symbol = "@";
         }
 
-        if(!handle) {
-            throw new Error("Please specify a handle to match.");
-        }
-
-        super({
-            ...props,
-            expr: new RegExp(`^\\s*${symbol}${handle}\\s+`)
-        }, context);
+        return (
+            <Match expr={new RegExp(`^\\s*${symbol}${handle}\\s+`)} handler={this.props.handler}>
+                { this.props.children }
+            </Match>
+        );
     }
 
     getHandle() {

@@ -33,6 +33,10 @@ export default class Match extends Rule {
         }
     }
 
+    render() {
+        return this.props.children && this.props.children.length ? <Rule>{ this.props.children }</Rule> : null;
+    }
+
     toString() {
         return `match ${this.props.exactly ? "exactly " : ""}${inspect(this.props.exactly || this.props.expr)}`;
     }

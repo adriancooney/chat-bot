@@ -2,15 +2,16 @@ import { inspect } from "util";
 import {
     flatten,
     omit,
-    isEqual,
+    isEqualWith,
     isPlainObject
 } from "lodash";
+
+const defaultLogger = (message, { indent } = {}) => console.log("  ".repeat(indent) + message);
 
 export default class Rule {
     constructor(props, context = {}) {
         this.props = {
             children: [],
-            any: false,
             ...props
         };
 
@@ -18,14 +19,25 @@ export default class Rule {
         this.context = context;
     }
 
+    /** @type {Function} The logger used during debug mode. */
     get logger() {
-        return this.context && this.context.logger ? this.context.logger : Rule.logger;
+        return this.context && this.context.logger ? this.context.logger : defaultLogger;
     }
 
-    match() {
+    /**
+     * Decide whether this rule matches the inputted message.
+     *
+     * @return {Boolean}
+     */
+    match(/* message */) {
         return true;
     }
 
+    /**
+     * Convert the rule to string (used when `print`ing).
+     *
+     * @return {String}
+     */
     toString() {
         return "rule";
     }
@@ -38,14 +50,34 @@ export default class Rule {
     async setState(state = {}) {
         this.state = Object.assign({}, this.state, state);
 
+        await this.update();
+    }
+
+    async setProps(props) {
+        console.log("Setting props", props);
+        this.props = Object.assign({}, props);
+
+        if(this.willReceiveProps) {
+            await this.willReceiveProps(this.props);
+        }
+
+        await this.update();
+    }
+
+    async update() {
         if(this.render) {
             this.mount = await Rule.mount(this.render(), Object.assign({}, this.context), this.mount);
         }
     }
 
-    /** {Function} The debug logger. */
-    static logger = (message, { indent } = {}) => console.log("  ".repeat(indent) + message);
-
+    /**
+     * Test a message against the current rule and return handlers to execute from matching rules.
+     *
+     * @param  {Message} message        The input message object.
+     * @param  {Boolean} debug          Whether or not to enable debug mode.
+     * @param  {Number}  level          The current node depth (private).
+     * @return {Promise<Function[]>}    Promise that resolves the matching handlers to execute.
+     */
     async test(message, debug, level = 0) {
         const transform = this.match(message);
         const match = transform !== false || typeof transform === "undefined";
@@ -61,29 +93,21 @@ export default class Rule {
                 this.logger(`message: ${shortMessage}`, { indent: level });
             }
 
-            this.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"}${this.props.action ? "*" : ""} ("${shortMessage}")`, { indent: level });
+            this.logger(`rule: ${this.toString()} = ${match ? "pass" : "fail"}${this.props.handler ? "*" : ""} ("${shortMessage}")`, { indent: level });
         }
 
         if(!match) {
             return;
         }
 
-        const action = this.props.action;
-
-        if(action) {
-            // We bind the message object to the action handler so any transforms
-            // applied by the rules are persisted.
-            return [ action.bind(null, message) ];
-        }
-
         if(Array.isArray(this.mount)) {
             const matches = [];
-            for(var i = 0, len = this.mount.length; i < len; i++) {
+            for(let i = 0; i < this.mount.length; i++) {
                 const child = this.mount[i];
                 const childMatch = await child.test(message, debug, level + 1);
 
                 if(childMatch) {
-                    if(!this.props.any) {
+                    if(this.any !== true) {
                         return childMatch;
                     }
 
@@ -95,16 +119,30 @@ export default class Rule {
         } else if(this.mount) {
             return this.mount.test(message, debug, level + 1);
         } else {
-            return [];
+            const handler = this.props.handler;
+
+            if(handler) {
+                // We bind the message object to the handler so any transforms
+                // applied by the rules are persisted.
+                return [ handler.bind(null, message) ];
+            } else {
+                return [];
+            }
         }
     }
 
+    /**
+     * Print a mounted rule tree.
+     *
+     * @param  {Number} level The current tree depth (private).
+     * @return {String}       The formatted tree.
+     */
     print(level = 0) {
-        const ws = level > 0 ? "  ".repeat(level) : "";
+        const ws = level > 0 ? "| ".repeat(level) : "";
         let output = this.toString();
 
-        if(this.props.action) {
-            output = "if " + output + " do " + inspect(this.props.action);
+        if(this.props.handler && !this.mount) {
+            output = "if " + output + " do " + inspect(this.props.handler);
         }
 
         output = ws + output + "\n"
@@ -121,11 +159,12 @@ export default class Rule {
     }
 
     /**
-     * Create a new matcher from a rule.
-     * @param  {Constructor}    rule     A rule constructor.
-     * @param  {Object}         props    The rule's props.
-     * @param  {...Function}    children Nested matchers returned from `Bot.rule`.
-     * @return {Function} Returns a matcher.
+     * Create a new rule descriptor tree.
+     *
+     * @param  {Function}    rule     Rule contsructor.
+     * @param  {Object}      props    Rule props (optional).
+     * @param  {...Object}   children Child rule descriptors.
+     * @return {Object}               Rule descriptor tree.
      */
     static create(rule, props, ...children) {
         if(rule === null) {
@@ -140,66 +179,66 @@ export default class Rule {
             props = {};
         }
 
-        let action = props.action || props.handler;
-
-        if(typeof action === "string") {
-            action = message => ({ type: props.action, payload: message });
-        }
-
-        if(typeof action === "object") {
-            action = () => (props.action);
-        }
+        // Flatten children to allow passing in arrays of arrays
+        children = flatten(children).filter(isPlainObject);
 
         if(children.length) {
-            if(action) {
-                throw new Error("Rule cannot have an action and children.");
+            if(props.handler) {
+                throw new Error("Rule cannot have an handler and children.");
             }
-
-            // Flatten children to allow passing in arrays of arrays
-            children = flatten(children).filter(isPlainObject);
         }
 
         return {
             type: rule,
-            children,
-            props: {
-                ...omit(props, "action", "handler"),
-                action,
-                children
-            }
+            props: Object.assign(props, { children })
         };
     }
 
+    /**
+     * Mount a rule descriptor tree.
+     *
+     * @param  {Object} tree         Rule descriptor tree (See Rule.create).
+     * @param  {Object} context      Optional context to be implicitly passed to child rules.
+     * @param  {Rule}   currentMount The current mount to diff.
+     * @return {Rule}                Returns an instance of the root node in the rule descriptor tree.
+     */
     static async mount(tree, context = {}, currentMount) {
         if(tree === null) {
             return null;
         }
 
-        if(currentMount instanceof Rule && currentMount.tree.type === tree.type && isEqual(currentMount.tree, tree)) {
-            return currentMount;
-        } else if(currentMount && currentMount.onUnmount) {
-            await currentMount.onUnmount.call(currentMount);
+        let inst;
+        if(currentMount instanceof Rule && tree.type === currentMount.tree.type) {
+            inst = Object.assign(currentMount, {
+                props: tree.props,
+                tree
+            });
+        } else {
+            inst = new tree.type(tree.props, context);
+
+            if(currentMount && currentMount.onUnmount) {
+                await currentMount.onUnmount.call(currentMount);
+            }
         }
 
-        const inst = new tree.type(tree.props, context);
         const childContext = Object.assign({}, context);
 
         let mount;
         if(inst.render) {
             const rendered = inst.render();
 
-            if(!isPlainObject(rendered) && rendered.type) {
+            if(rendered !== null && (!isPlainObject(rendered) || !rendered.type)) {
                 throw new Error("render method must return a valid rule.");
             }
 
             mount = await Rule.mount(rendered, childContext, currentMount ? currentMount.mount : null);
-        } else if(tree.children) {
-            mount = await Promise.all(tree.children.map((subtree, i) => {
+        } else if(tree.props.children && tree.props.children.length) {
+            mount = await Promise.all(tree.props.children.map((subtree, i) => {
                 const mount = currentMount && Array.isArray(currentMount.mount)
                     ? currentMount.mount.find(submount => {
-                        return submount.props.key === subtree.props.key;
+                        return subtree.props.key && submount.props.key && submount.props.key === subtree.props.key;
                     }) || currentMount.mount[i]
-                    : null
+                    : null;
 
                 return Rule.mount(subtree, childContext, mount);
             }));
@@ -216,6 +255,13 @@ export default class Rule {
         return inst;
     }
 
+    /**
+     * Apply a transform to a message. A transform is a value returned from the `match` method.
+     *
+     * @param  {Object}         message     The input message object.
+     * @param  {String|Object}  transform   The string or object transform.
+     * @return {Object}                     The transform message object.
+     */
     static transform(message, transform) {
         if(typeof transform === "string") {
             transform = { content: transform };

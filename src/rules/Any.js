@@ -2,10 +2,8 @@ import Rule from "./Rule";
 
 export default class Any extends Rule {
     constructor(props, context) {
-        super({
-            ...props,
-            any: true
-        }, context);
+        super(props, context);
+        this.any = true;
     }
 
     match() {

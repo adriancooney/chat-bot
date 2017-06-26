@@ -94,10 +94,6 @@ export default class Bot extends Rule {
         await this.transition(null, undefined, this.state, null);
     }
 
-    async onUnmount() {
-        return;
-    }
-
     /**
      * A no-op transition.
      */
