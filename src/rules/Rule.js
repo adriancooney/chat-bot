@@ -2,7 +2,7 @@ import { inspect } from "util";
 import {
     flatten,
     omit,
-    isEqualWith,
+    isEqual,
     isPlainObject
 } from "lodash";
 
@@ -209,6 +209,10 @@ export default class Rule {
 
         let inst;
         if(currentMount instanceof Rule && tree.type === currentMount.tree.type) {
+            if(isEqual(currentMount.tree.props, tree.props)) {
+                return currentMount;
+            }
+
             inst = Object.assign(currentMount, {
                 props: tree.props,
                 tree
@@ -228,7 +232,7 @@ export default class Rule {
             const rendered = inst.render();
 
             if(rendered !== null && (!isPlainObject(rendered) || !rendered.type)) {
-                throw new Error("render method must return a valid rule.");
+                throw new Error("render method must return a valid rule or `null`.");
             }
 
             mount = await Rule.mount(rendered, childContext, currentMount ? currentMount.mount : null);

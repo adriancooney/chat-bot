@@ -200,6 +200,24 @@ describe("Rule", () => {
             assert.equal(mount2.mount.mount[0].props.i, 10);
         });
 
+        it("should not trigger a rerender if props don't change", async () => {
+            let renderCount = 0;
+
+            class A extends Rule {
+                render() {
+                    renderCount++;
+                    return null;
+                }
+            }
+
+            const a = (<A />);
+            const mount = await Rule.mount(a);
+            const mount2 = await Rule.mount(a, undefined, mount);
+
+            assert(mount === mount2);
+            assert.equal(renderCount, 1);
+        });
+
         it("should respect a rule's render method", async () => {
             class C extends Rule {
                 render() {
@@ -221,7 +239,7 @@ describe("Rule", () => {
 
                 await Rule.mount(<D />);
             } catch(err) {
-                assert.equal(err.message, "render method must return a valid rule.");
+                assert.equal(err.message, "render method must return a valid rule or `null`.");
             }
         });
 
