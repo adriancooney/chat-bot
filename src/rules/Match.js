@@ -3,7 +3,8 @@ import Rule from "./Rule";
 
 export default class Match extends Rule {
     match({ content, ...attrs }) {
-        const { exactly, expr, groups } = this.props;
+        let exactly = this.props.exactly;
+        const { expr, groups } = this.props;
 
         if(typeof exactly !== "undefined") {
             exactly = exactly.toString();

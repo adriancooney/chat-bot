@@ -126,3 +126,4 @@ export default class TeamworkChatInterface extends ServiceInterface {
 * A `Person` is a single user.
 * A `Room` is a collection of people sending and recieving messages in the one space.
 * All entities must be serializable to JSON (and deserializable).
+* Entities MUST be comparable by value e.g. `room1 === room1 // true`
