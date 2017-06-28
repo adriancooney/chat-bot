@@ -1,11 +1,11 @@
 import { inspect } from "util";
 import {
     flatten,
-    omit,
     isEqual,
     isPlainObject
 } from "lodash";
 
+// eslint-disable-next-line
 const defaultLogger = (message, { indent } = {}) => console.log("  ".repeat(indent) + message);
 
 export default class Rule {
@@ -49,17 +49,6 @@ export default class Rule {
      */
     async setState(state = {}) {
         this.state = Object.assign({}, this.state, state);
-
-        await this.update();
-    }
-
-    async setProps(props) {
-        console.log("Setting props", props);
-        this.props = Object.assign({}, props);
-
-        if(this.willReceiveProps) {
-            await this.willReceiveProps(this.props);
-        }
 
         await this.update();
     }
@@ -145,7 +134,7 @@ export default class Rule {
             output = "if " + output + " do " + inspect(this.props.handler);
         }
 
-        output = ws + output + "\n"
+        output = ws + output + "\n";
 
         if(this.mount) {
             if(Array.isArray(this.mount)) {

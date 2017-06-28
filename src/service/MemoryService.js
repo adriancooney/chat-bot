@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { uniq, countBy, sum } from "lodash";
+import { uniq, sum } from "lodash";
 
 let serial = 0;
 

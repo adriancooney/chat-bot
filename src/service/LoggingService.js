@@ -17,6 +17,7 @@ export default class LoggingService extends MemoryService {
     }
 
     log(...args) {
+        // eslint-disable-next-line
         console.log("<", ...args);
     }
 

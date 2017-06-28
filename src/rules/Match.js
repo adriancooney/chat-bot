@@ -2,7 +2,7 @@ import { inspect } from "util";
 import Rule from "./Rule";
 
 export default class Match extends Rule {
-    match({ content, ...attrs }) {
+    match({ content }) {
         let exactly = this.props.exactly;
         const { expr, groups } = this.props;
 

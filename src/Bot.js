@@ -1,5 +1,4 @@
-import { inspect } from "util";
-import { flatten, difference, cloneDeep } from "lodash";
+import { difference, cloneDeep } from "lodash";
 import Service from "./Service";
 import Rule from "./rules/Rule";
 
@@ -97,7 +96,7 @@ export default class Bot extends Rule {
     /**
      * A no-op transition.
      */
-    async transition(action, currentState, nextState, mutation) {
+    async transition(/* action, currentState, nextState, mutation */) {
         return;
     }
 

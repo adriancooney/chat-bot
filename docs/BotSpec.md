@@ -10,6 +10,8 @@ type RoomTitle = <service specific>;
 type MessageIdentifer = <service specific>;
 type MessageContent = <service specific>;
 
+type Community = <service specific>; // Identifier to subset of global user set
+
 type Room = {
     id: RoomIdentifer,
     title: RoomTitle,
@@ -29,6 +31,7 @@ type Message = {
     content: MessageContent,
     author: Person,
     source: Person|Room,
+    community?: Community, // If none exists, assume global community
     mentions: {
         startIndex: number,
         endIndex: number,
@@ -59,7 +62,7 @@ interface Service {
     updateMessage(MessageIdentifer, MessageUpdate): Promise;
     createPerson(PersonUpdate): Promise<Person>;
     getPerson(PersonIdentifier): Promise<Person>;
-    getPersonByHandle(PersonHandle): Promise<Person>;
+    getPersonByHandle(PersonHandle, Community?): Promise<Person>; // Default community = Global community
     getPeople(page: int): Promise<Results<Person[]>;
     updatePerson(PersonIdentifier, PersonUpdate): Promise<Person>
     addPersonToRoom(PersonIdentifier, RoomIdentifer): Promise;
@@ -79,6 +82,7 @@ interface Service {
     sendMessageToRoom(RoomIdentifer, Message|String): Promise;
     reply(Message, Message|String); // Given a received message, send a message to the received message source (i.e. room or private message)
     getMessagesForRoom(RoomIdentifer, page: int): Promise<Results<Message[]>>;
+    getGlobalCommunity(): Community;
 
     // Questionable
     getRoomsForPerson(PersonIdentifier): Promise<Rooms[]>;

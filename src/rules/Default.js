@@ -6,6 +6,6 @@ export default class Default extends Rule {
     }
 
     toString() {
-        return "default to"
+        return "default to";
     }
 }

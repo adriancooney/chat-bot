@@ -1,5 +1,5 @@
 import http from "http";
-import { cloneDeep, pick, isPlainObject, last } from "lodash";
+import { cloneDeep, pick, isPlainObject, isEqual } from "lodash";
 import LoggingService from "./LoggingService";
 
 export default class TestService extends LoggingService {
@@ -60,12 +60,12 @@ export default class TestService extends LoggingService {
         }
 
         if(typeof matcher === "function" && !matcher(message)) {
-            throw Object.assign(new Error(`Message does match predicate.`));
+            throw Object.assign(new Error("Message does match predicate."));
         }
 
-        if(isPlainObject(matcher) && !deepEqual(message, matcher)) {
+        if(isPlainObject(matcher) && !isEqual(message, matcher)) {
             throw Object.assign(
-                new Error(`Message does match predicate.`),
+                new Error("Message does match predicate."),
                 {
                     showDiff: true,
                     expected: matcher,
@@ -76,7 +76,7 @@ export default class TestService extends LoggingService {
 
         if(matcher instanceof RegExp && !message.content.match(matcher)) {
             throw Object.assign(
-                new Error(`Message does match RegExp.`),
+                new Error("Message does match RegExp."),
                 {
                     expected: matcher.toString(),
                     actual: message.content
@@ -97,7 +97,7 @@ export default class TestService extends LoggingService {
                             stack: err.stack
                         }
                     }
-                }
+                };
             }).then(({ status, body }) => {
                 res.writeHead(status || 200, {
                     "Content-Type": "application/json"
@@ -111,7 +111,7 @@ export default class TestService extends LoggingService {
         this.server.listen(port);
     }
 
-    async handleRequest(req, res) {
+    async handleRequest(req) {
         if(req.method !== "POST") {
             throw new Error("The bot API only accepts POST requests.");
         }

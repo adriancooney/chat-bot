@@ -11,6 +11,6 @@ export default class Any extends Rule {
     }
 
     toString() {
-        return "any of"
+        return "any of";
     }
 }

@@ -1,4 +1,3 @@
-import { inspect } from "util";
 import Rule from "./Rule";
 
 export default class From extends Rule {
