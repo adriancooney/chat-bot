@@ -1,26 +1,36 @@
 import http from "http";
-import { cloneDeep, pick, isPlainObject, isEqual } from "lodash";
+import { cloneDeepWith, pick, isPlainObject, isEqual } from "lodash";
 import LoggingService from "./LoggingService";
 
 export default class TestService extends LoggingService {
-    constructor() {
-        super();
+    constructor(options) {
+        super(options);
 
         this.deferred = [];
         this.queue = [];
         this.stack = [];
     }
 
-    pushState() {
-        this.stack.push(
-            cloneDeep(
-                pick(this, "people", "rooms", "messages")
-            )
-        );
+    isEntity(value) {
+        return this.isPerson(value) || this.isRoom(value) || this.isMessage(value);
     }
 
-    popState() {
-        Object.assign(this, this.stack.pop());
+    pushState() {
+        const customizer = value => this.isEntity(value) ? value : undefined;
+
+        this.stack.push({
+            service: cloneDeepWith(pick(this, "people", "rooms", "messages"), customizer),
+            bot: this.bot ? cloneDeepWith(this.bot.state, customizer) : null
+        });
+    }
+
+    async popState() {
+        const popped = this.stack.pop();
+        Object.assign(this, popped.service);
+
+        if(this.bot && popped.bot) {
+            await this.bot.setState(popped.bot);
+        }
     }
 
     async getLastMessageInRoom(room, offset = 0) {
@@ -40,18 +50,22 @@ export default class TestService extends LoggingService {
 
     connect(bot) {
         this.bot = bot;
+
+        if(this.options.debug) {
+            this.bot.debug = true;
+        }
     }
 
     async dispatch(message) {
-        return this.bot.test(message, true);
+        return this.bot.test(message, this.options.debug);
     }
 
     async dispatchMessageToRoom(...args) {
-        return this.dispatch(await this.sendMessageToRoom(...args), true);
+        return this.dispatch(await this.sendMessageToRoom(...args));
     }
 
     async dispatchMessageToPerson(...args) {
-        return this.dispatch(await this.sendMessageToPerson(...args), true);
+        return this.dispatch(await this.sendMessageToPerson(...args));
     }
 
     static matchMessage(message, matcher) {

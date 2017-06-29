@@ -209,6 +209,10 @@ export default class MemoryService extends EventEmitter {
         return this.rooms.includes(room);
     }
 
+    isMessage(message) {
+        return this.messages.includes(message);
+    }
+
     reply(receive, input) {
         return this.sendMessageToRoom(receive.source, input);
     }

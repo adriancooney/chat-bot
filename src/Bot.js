@@ -8,7 +8,7 @@ export default class Bot extends Rule {
         this.props = props;
         this.stack = [];
         this.queue = [];
-        this.debug = true;
+        this.debug = false;
     }
 
     /**
@@ -112,24 +112,19 @@ export default class Bot extends Rule {
 
         if(level === 0) {
             const shortMessage = message.content.length > 40 ? message.content.slice(0, 40) + "..." : message.content;
-            this.logger(`message: ${shortMessage}`, { indent: level });
+
+            if(debug || this.debug) {
+                this.logger(`message: ${shortMessage}`, { indent: level });
+            }
         }
 
-        if(debug) {
+        if(debug || this.debug) {
             this.logger(`bot: ${this.constructor.name}`, { indent: level });
         }
 
         await this.handleMessage(message, debug, level + 1);
 
         return false;
-    }
-
-    pushState() {
-        return this.stack.push(cloneDeep(this.state));
-    }
-
-    popState() {
-        return this.setState(this.stack.pop());
     }
 
     toString() {

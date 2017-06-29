@@ -2,6 +2,14 @@ import repl from "repl";
 import MemoryService from "./MemoryService";
 
 export default class LoggingService extends MemoryService {
+    constructor(options) {
+        super();
+
+        this.options = Object.assign({
+            debug: true
+        }, options);
+    }
+
     async init() {
         const result = await super.init();
 
@@ -17,8 +25,10 @@ export default class LoggingService extends MemoryService {
     }
 
     log(...args) {
-        // eslint-disable-next-line
-        console.log("<", ...args);
+        if(this.options.debug) {
+            // eslint-disable-next-line
+            console.log("<", ...args);
+        }
     }
 
     async addRoom(room) {
