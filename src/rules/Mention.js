@@ -1,35 +1,27 @@
 import Rule from "./Rule";
-import Match from "./Match";
 
 export default class Mention extends Rule {
-    constructor(props, context) {
-        super(props, context);
+    async match(input) {
+        let formatted;
 
-        if(!props.handle && !context.service.user.handle) {
-            throw new Error("Please specify a handle to match.");
-        }
-    }
-
-    render() {
-        const handle = this.props.handle || this.context.service.user.handle;
-        let symbol = this.props.symbol;
-
-        if(!symbol) {
-            symbol = "@";
+        if(this.props.handle) {
+            formatted = `${this.props.symbol}${this.props.handle}`;
+        } else {
+            formatted = this.context.service.formatMention(await this.context.service.getCurrentUser(input.community));
         }
 
-        return (
-            <Match expr={new RegExp(`^\\s*${symbol}${handle}\\s+`)} handler={this.props.handler}>
-                { this.props.children }
-            </Match>
-        );
-    }
+        const match = input.content.match(new RegExp(`^\\s*${formatted}\\s+`, "i"));
 
-    getHandle() {
-        return this.props.handle || this.context.handle;
+        if(match) {
+            return {
+                content: input.content.slice(match.index + match[0].length)
+            };
+        } else {
+            return false;
+        }
     }
 
     toString() {
-        return `mention @${this.props.handle || this.context.service.user.handle}`;
+        return "mention";
     }
 }
