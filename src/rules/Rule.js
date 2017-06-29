@@ -68,7 +68,7 @@ export default class Rule {
      * @return {Promise<Function[]>}    Promise that resolves the matching handlers to execute.
      */
     async test(message, debug, level = 0) {
-        const transform = this.match(message);
+        const transform = await this.match(message);
         const match = transform !== false || typeof transform === "undefined";
 
         if(match) {
