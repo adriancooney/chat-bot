@@ -196,7 +196,7 @@ export default class Rule {
             return null;
         }
 
-        let inst;
+        let newInst = false, inst;
         if(currentMount instanceof Rule && tree.type === currentMount.tree.type) {
             if(isEqual(currentMount.tree.props, tree.props)) {
                 return currentMount;
@@ -208,6 +208,7 @@ export default class Rule {
             });
         } else {
             inst = new tree.type(tree.props, context);
+            newInst = true;
 
             if(currentMount && currentMount.onUnmount) {
                 await currentMount.onUnmount.call(currentMount);
@@ -241,7 +242,7 @@ export default class Rule {
 
         Object.assign(inst, { context, tree, mount });
 
-        if(inst.onMount) {
+        if(newInst && inst.onMount) {
             await inst.onMount();
         }
 
