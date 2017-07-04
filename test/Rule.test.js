@@ -1,7 +1,7 @@
 import assert from "assert";
 import { inspect } from "util";
-import Rule from "../../src/rules/Rule";
-
+import Rule from "../src/Rule";
+import Any from "../src/rules/Any";
 
 describe("Rule", () => {
     describe(".create", () => {
@@ -38,6 +38,23 @@ describe("Rule", () => {
                     Rule.create(Rule),
                     Rule.create(Rule)
                 ]);
+            });
+        });
+
+        it("should allow for string rules that match the default rules", () => {
+            const rule = Rule.create("any");
+
+            assert.deepEqual(rule, {
+                type: Any,
+                props: {
+                    children: []
+                }
+            });
+        });
+
+        it("should not allow string rules for non default rules", () => {
+            assert.throws(() => {
+                const rule = Rule.create("foobar");
             });
         });
     });

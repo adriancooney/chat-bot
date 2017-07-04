@@ -1,4 +1,4 @@
-import Rule from "./Rule";
+import Rule from "../Rule";
 
 export default class Default extends Rule {
     match() {
@@ -9,3 +9,5 @@ export default class Default extends Rule {
         return "default to";
     }
 }
+
+Rule.defaultRules.default = Default;

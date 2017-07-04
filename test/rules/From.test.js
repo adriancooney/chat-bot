@@ -1,5 +1,5 @@
 import assert from "assert";
-import Rule from "../../src/rules/Rule";
+import Rule from "../../src/Rule";
 import From from "../../src/rules/From";
 
 describe("From", () => {

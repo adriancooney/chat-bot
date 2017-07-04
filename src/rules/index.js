@@ -1,4 +1,3 @@
-export Rule from "./Rule";
 export Private from "./Private";
 export From from "./From";
 export Match from "./Match";

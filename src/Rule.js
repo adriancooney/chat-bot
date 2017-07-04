@@ -9,6 +9,8 @@ import {
 const defaultLogger = (message, { indent } = {}) => console.log("  ".repeat(indent) + message);
 
 export default class Rule {
+    static defaultRules = {};
+
     constructor(props, context = {}) {
         this.props = {
             children: [],
@@ -160,8 +162,12 @@ export default class Rule {
             return null;
         }
 
+        if(typeof rule === "string") {
+            rule = Rule.defaultRules[rule];
+        }
+
         if(typeof rule !== "function") {
-            throw new Error("Rule must be a function.");
+            throw new Error("Rule must be a function or a string that is one of the default rules.");
         }
 
         if(!props) {

@@ -1,5 +1,5 @@
 import { inspect } from "util";
-import Rule from "./Rule";
+import Rule from "../Rule";
 
 export default class Match extends Rule {
     match({ content }) {
@@ -42,3 +42,5 @@ export default class Match extends Rule {
         return `match ${this.props.exactly ? "exactly " : ""}${inspect(this.props.exactly || this.props.expr)}`;
     }
 }
+
+Rule.defaultRules.match = Match;

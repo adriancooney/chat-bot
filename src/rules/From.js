@@ -1,4 +1,4 @@
-import Rule from "./Rule";
+import Rule from "../Rule";
 
 export default class From extends Rule {
     constructor(props, context) {
@@ -77,3 +77,5 @@ export default class From extends Rule {
         return `from ${sources.join(" and ")}`;
     }
 }
+
+Rule.defaultRules.from = From;

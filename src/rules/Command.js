@@ -1,4 +1,4 @@
-import Rule from "./Rule";
+import Rule from "../Rule";
 import Match from "./Match";
 
 export default class Command extends Rule {
@@ -14,3 +14,5 @@ export default class Command extends Rule {
         return `command ${this.props.name}`;
     }
 }
+
+Rule.defaultRules.command = Command;

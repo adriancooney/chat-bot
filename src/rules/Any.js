@@ -1,4 +1,4 @@
-import Rule from "./Rule";
+import Rule from "../Rule";
 
 export default class Any extends Rule {
     constructor(props, context) {
@@ -14,3 +14,5 @@ export default class Any extends Rule {
         return "any of";
     }
 }
+
+Rule.defaultRules.any = Any;

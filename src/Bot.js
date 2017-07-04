@@ -1,6 +1,6 @@
 import { difference } from "lodash";
 import Service from "./Service";
-import Rule from "./rules/Rule";
+import Rule from "./Rule";
 
 export default class Bot extends Rule {
     constructor(props, context = {}) {

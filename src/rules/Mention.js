@@ -1,4 +1,4 @@
-import Rule from "./Rule";
+import Rule from "../Rule";
 
 export default class Mention extends Rule {
     async match(input) {
@@ -25,3 +25,5 @@ export default class Mention extends Rule {
         return "mention";
     }
 }
+
+Rule.defaultRules.mention = Mention;
