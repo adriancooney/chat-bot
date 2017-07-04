@@ -35,7 +35,7 @@ export default class From extends Rule {
             return message.source.id === room;
         } else if(typeof room === "string") {
             return message.source.title === room;
-        } else if(this.context.service.compareRoom(message.source, room) === 0) {
+        } else if(this.context.service && this.context.service.compareRoom(message.source, room) === 0) {
             return true;
         } else {
             return false;
@@ -47,7 +47,7 @@ export default class From extends Rule {
             return message.author.id === user;
         } else if(typeof user === "string") {
             return message.author.handle === user;
-        } else if(this.context.service.comparePerson(message.author, user) === 0) {
+        } else if(this.context.service && this.context.service.comparePerson(message.author, user) === 0) {
             return true;
         } else {
             return false;
