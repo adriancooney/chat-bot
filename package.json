@@ -79,7 +79,6 @@
     "rules": {
       "no-cond-assign": 0,
       "react/jsx-uses-vars": "error",
-      "no-console": 1,
       "indent": [
         "error",
         4
