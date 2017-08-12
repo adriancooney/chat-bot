@@ -62,19 +62,44 @@ export default class Bot extends Rule {
         await this.setState(nextState);
 
         return this.transitioning = (async () => {
+            const errors = [];
+
             for(let mutation of mutations) {
                 if(this.debug) {
                     this.logger(`transition: ${mutation.type}`);
                 }
 
-                await this.transition(action, this.state, nextState, mutation);
+                try {
+                    await this.transition(action, this.state, nextState, mutation);
+                } catch(err) {
+                    // We ignore errors in the transitions because the state has changed
+                    // and we must run *all* transitions because they are independant of each other.
+                    errors.push(err);
+                }
             }
-        })().then(() => {
+
+            return errors;
+        })().then(errors => {
             this.transitioning = null;
 
             if(this.queue.length) {
                 const next = this.queue.shift();
                 this.dispatch(next.type, next.payload).then(next.resolve, next.reject);
+            }
+
+            if(errors.length) {
+                // TODO(adrian): I'm not so sure about this. We're swallowing other potential errors here. This needs to be fixed.
+                if(errors.length > 1) {
+                    // eslint-disable-next-line
+                    console.warn(
+                        "Warning: More than one error occurred during this state transition but only the first is thrown. " +
+                        "To access the other errors, you can find an array of errors on the `error` property of the thrown error. "
+                    );
+
+                    Object.assign(errors[0], { errors: errors.slice(1) });
+                }
+
+                throw errors[0];
             }
         });
     }
