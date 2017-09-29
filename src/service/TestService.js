@@ -42,9 +42,9 @@ export default class TestService extends LoggingService {
         return TestService.matchMessage(await this.getLastMessageInRoom(room, offset), matcher);
     }
 
-    async expectMessageToPerson(person, matcher) {
+    async expectMessageToPerson(person, matcher, offset) {
         return TestService.matchMessage((
-            await this.getLastMessageInRoom(await this.getPrivateRoomForPerson(person))
+            await this.getLastMessageInRoom(await this.getPrivateRoomForPerson(person), offset)
         ), matcher);
     }
 
