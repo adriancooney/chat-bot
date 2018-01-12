@@ -1,0 +1,21 @@
+## Code
+* Remove logic of "action" and "handler" in Rule.create.
+* Decide if leaf nodes require an action or not.
+* Address problems of swallowed errors with exceptions raised during `reduce` call.
+
+## Concepts
+* Thing of a better name than "rendering" the bot inputs.
+* Access hosted bot user interface that is similiar to Redux dev tools for the bot.
+
+### Future improvements
+* Allow returning of *message interfaces* like buttons and toggles to actual chat.
+
+* Fix broken mention
+* error:  TypeError: Cannot read property 'request' of undefined
+    at Poker.getTasklist (/src/node_modules/chat-bot-poker/build/Poker.js:600:47)
+    at Poker.plan (/src/node_modules/chat-bot-poker/build/Poker.js:546:31)
+    at Poker.handleMessage (/src/node_modules/chat-bot/build/Bot.js:48:37)
+    at <anonymous>
+    at process._tickDomainCallback (internal/process/next_tick.js:208:7)
+* Notify room of errors
+* Add propTypes
